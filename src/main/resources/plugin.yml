@@ -1,0 +1,16 @@
+name: Trims
+version: 'v1'
+main: dev.auto.trims.Main
+api-version: '1.21'
+prefix: JuxePL
+authors: [ AutoYT ]
+commands:
+  debug:
+    description: Debug utils
+    usage: /debug
+    permission: trims.debug
+
+permissions:
+  trims.debug:
+    description: Allows you to use the debug command
+    default: op
