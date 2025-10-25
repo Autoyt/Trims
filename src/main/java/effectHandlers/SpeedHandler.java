@@ -24,18 +24,24 @@ public class SpeedHandler implements Listener, IBaseEffectHandler {
 
     public SpeedHandler(Main instance) {
         this.instance = instance;
+        // Ensure this handler participates in the ticker
+        TrimManager.handlers.add(this);
     }
+
+    // TODO Add boss bar with 3 segments for different charge levels.
 
     @Override
     public void onTick() {
         for (Player player : instance.getServer().getOnlinePlayers()) {
-            int instanceCount = TrimManager.getSlots(player.getUniqueId()).instancesOfTrim(this.defaultPattern);
+            UUID id = player.getUniqueId();
+            PlayerArmorSlots slots = TrimManager.getSlots(id);
+            int instanceCount = slots.instancesOfTrim(this.defaultPattern);
 
             if (instanceCount >= 4) {
-                lv4Players.add(player.getUniqueId());
+                lv4Players.add(id);
             }
             else {
-                lv4Players.remove(player.getUniqueId());
+                lv4Players.remove(id);
             }
         }
     }
@@ -69,6 +75,8 @@ public class SpeedHandler implements Listener, IBaseEffectHandler {
 
         event.setCancelled(true);
         p.setAllowFlight(false);
+
+        // TODO Add the visual looking + carrier velocity to this boost
 
         long now = System.currentTimeMillis();
         long last = lastDash.getOrDefault(p.getUniqueId(), 0L);

@@ -3,9 +3,12 @@ package effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -58,19 +61,20 @@ public class NightVisionHandler implements Listener, IBaseEffectHandler {
     @Override
     public void onTick() {
         for (Player player : instance.getServer().getOnlinePlayers()) {
-            int instanceCount = TrimManager.getSlots(player.getUniqueId()).instancesOfTrim(this.defaultPattern);
-            System.out.println(instanceCount);
+            UUID id = player.getUniqueId();
+            PlayerArmorSlots slots = TrimManager.getSlots(id);
+            int instanceCount = slots.instancesOfTrim(this.defaultPattern);
             if (instanceCount >= 4) {
-                lv4Players.add(player.getUniqueId());
+                lv4Players.add(id);
                 handleLV4(player);
             }
             else {
                 // Player no longer has LV4 - clean up
-                if (lv4Players.remove(player.getUniqueId())) {
+                if (lv4Players.remove(id)) {
                     hideNametagTeam.removeEntry(player.getName());
                     
                     // Turn off glow for all targets this viewer was tracking
-                    Set<UUID> targets = glowingTargets.remove(player.getUniqueId());
+                    Set<UUID> targets = glowingTargets.remove(id);
                     if (targets != null) {
                         for (UUID targetId : targets) {
                             Player target = Bukkit.getPlayer(targetId);
@@ -86,8 +90,8 @@ public class NightVisionHandler implements Listener, IBaseEffectHandler {
             // Apply night vision potion if needed
             if (instanceCount > 0) {
                 PotionEffect current = player.getPotionEffect(PotionEffectType.NIGHT_VISION);
-                if (current == null || current.getDuration() <= 60) {
-                    player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 200, 0, false, false));
+                if (current == null || current.getDuration() <= 1200) {
+                    player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 2400, 0, false, false));
                 }
             }
         }
@@ -95,7 +99,6 @@ public class NightVisionHandler implements Listener, IBaseEffectHandler {
 
     @EventHandler
     public void onArmorEquip(PlayerArmorChangeEvent event) {
-        System.out.println("Armor change in night vision handler");
         handleEquip(event, defaultPattern);
     }
 
