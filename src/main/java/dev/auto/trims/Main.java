@@ -2,10 +2,10 @@ package dev.auto.trims;
 
 import com.github.retrooper.packetevents.PacketEvents;
 import commands.DebugCommands;
-import effecthandler.NightVisionHandler;
+import effectHandlers.NightVisionHandler;
+import effectHandlers.SpeedHandler;
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import listeners.GameListeners;
-import listeners.GhostStepListener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Objects;
@@ -25,12 +25,10 @@ public final class Main extends JavaPlugin {
         getLogger().info("[TRIMS] is enabled!");
 
         getServer().getPluginManager().registerEvents(new GameListeners(), this);
-        getServer().getPluginManager().registerEvents(new NightVisionHandler(instance), this);
+        getServer().getPluginManager().registerEvents(new NightVisionHandler(this), this);
+        getServer().getPluginManager().registerEvents(new SpeedHandler(this), this);
 
-        GhostStepListener ghost = new GhostStepListener();
-        getServer().getPluginManager().registerEvents(ghost, this);
-
-        DebugCommands debug = new DebugCommands(this, ghost);
+        DebugCommands debug = new DebugCommands(this);
         Objects.requireNonNull(getCommand("debug")).setExecutor(debug);
         Objects.requireNonNull(getCommand("debug")).setTabCompleter(debug);
     }
