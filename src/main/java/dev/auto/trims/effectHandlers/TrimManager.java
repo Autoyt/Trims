@@ -8,6 +8,7 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.inventory.meta.trim.TrimPattern;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class TrimManager {
     private static final Main instance = Main.getInstance();
     private static final Map<UUID, PlayerArmorSlots> SLOTS = new ConcurrentHashMap<>();
+    private static final Map<UUID, PotionEffectType> EFFECTS = new ConcurrentHashMap<>();
 
     public static volatile boolean running = false;
 
@@ -46,6 +48,31 @@ public final class TrimManager {
         slots.setLeggings(deserializeTrim(inv.getLeggings()));
         slots.setChestplate(deserializeTrim(inv.getChestplate()));
         slots.setHelmet(deserializeTrim(inv.getHelmet()));
+    }
+
+    public static void setEffect(UUID uuid, PotionEffectType type) {
+        // Compatibility method (kept for legacy callers). Not used by current handlers.
+        Player p = Bukkit.getPlayer(uuid);
+        if (p == null) {
+            // Still record for later if needed
+            EFFECTS.put(uuid, type);
+            return;
+        }
+
+        PotionEffectType old = EFFECTS.get(uuid);
+        if (old != null && old != type) {
+            // Remove the previously tracked effect, not the new one
+            p.removePotionEffect(old);
+        }
+        EFFECTS.put(uuid, type);
+    }
+
+    public static void clearEffect(UUID uuid) {
+        Player p = Bukkit.getPlayer(uuid);
+        PotionEffectType tracked = EFFECTS.remove(uuid);
+        if (p != null && tracked != null) {
+            p.removePotionEffect(tracked);
+        }
     }
 
     /** Start the repeating ticker (if not already started). */

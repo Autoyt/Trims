@@ -2,6 +2,7 @@ package dev.auto.trims;
 
 import com.github.retrooper.packetevents.PacketEvents;
 import dev.auto.trims.commands.DebugCommands;
+import dev.auto.trims.effectHandlers.FireResistanceHandler;
 import dev.auto.trims.effectHandlers.NightVisionHandler;
 import dev.auto.trims.effectHandlers.SpeedHandler;
 import dev.auto.trims.effectHandlers.TrimManager;
@@ -24,11 +25,14 @@ public final class Main extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
-        getLogger().info("[TRIMS] is enabled!");
+        PacketEvents.getAPI().init();
+
+        getLogger().info("enabled!");
 
         getServer().getPluginManager().registerEvents(new GameListeners(), this);
         getServer().getPluginManager().registerEvents(new NightVisionHandler(this), this);
         getServer().getPluginManager().registerEvents(new SpeedHandler(this), this);
+        getServer().getPluginManager().registerEvents(new FireResistanceHandler(this), this);
 
         DebugCommands debug = new DebugCommands(this);
         Objects.requireNonNull(getCommand("debug")).setExecutor(debug);

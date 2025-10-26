@@ -1,5 +1,6 @@
 package dev.auto.trims.listeners;
 
+import dev.auto.trims.Main;
 import dev.auto.trims.effectHandlers.TrimManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -17,6 +18,7 @@ public class GameListeners implements Listener {
         final UUID uuid = player.getUniqueId();
 
         TrimManager.clear(uuid);
+        TrimManager.clearEffect(uuid);
 
         if (Bukkit.getOnlinePlayers().isEmpty()) {
             TrimManager.stop();
@@ -33,5 +35,7 @@ public class GameListeners implements Listener {
         }
 
         TrimManager.buildSlots(uuid);
+        // Not proud of this shit, but damn it I dont want to add join listener logic to all sounds smh..
+        Bukkit.getScheduler().runTaskLater(Main.getInstance(), player::stopAllSounds, 2);
     }
 }

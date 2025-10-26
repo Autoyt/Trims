@@ -55,15 +55,16 @@ public class NightVisionHandler implements Listener, IBaseEffectHandler {
             UUID id = player.getUniqueId();
             PlayerArmorSlots slots = TrimManager.getSlots(id);
             int instanceCount = slots.instancesOfTrim(this.defaultPattern);
+
+            // Maintain LV4 membership and per-tick behavior
             if (instanceCount >= 4) {
                 lv4Players.add(id);
                 handleLV4(player);
-            }
-            else {
-                // Player no longer has LV4 - clean up
+            } else {
+                // Player no longer has LV4 - clean up any glow/team state once
                 if (lv4Players.remove(id)) {
                     hideNametagTeam.removeEntry(player.getName());
-                    
+
                     // Turn off glow for all targets this viewer was tracking
                     Set<UUID> targets = glowingTargets.remove(id);
                     if (targets != null) {
@@ -78,12 +79,15 @@ public class NightVisionHandler implements Listener, IBaseEffectHandler {
                 }
             }
 
-            // Apply night vision potion if needed
+            // Apply night vision potion if needed (any number of DUNE pieces)
             if (instanceCount > 0) {
                 PotionEffect current = player.getPotionEffect(PotionEffectType.NIGHT_VISION);
                 if (current == null || current.getDuration() <= 1200) {
                     player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 2400, 0, false, false));
                 }
+            } else {
+                // Remove NIGHT_VISION when no DUNE-trim pieces are worn
+                player.removePotionEffect(PotionEffectType.NIGHT_VISION);
             }
         }
     }
