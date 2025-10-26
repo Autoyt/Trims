@@ -1,4 +1,4 @@
-package particles;
+package dev.auto.trims.particles;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;

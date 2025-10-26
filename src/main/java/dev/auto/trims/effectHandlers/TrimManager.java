@@ -1,4 +1,4 @@
-package effectHandlers;
+package dev.auto.trims.effectHandlers;
 
 import dev.auto.trims.Main;
 import org.bukkit.Bukkit;

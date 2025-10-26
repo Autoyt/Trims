@@ -1,12 +1,12 @@
 package dev.auto.trims;
 
 import com.github.retrooper.packetevents.PacketEvents;
-import commands.DebugCommands;
-import effectHandlers.NightVisionHandler;
-import effectHandlers.SpeedHandler;
-import effectHandlers.TrimManager;
+import dev.auto.trims.commands.DebugCommands;
+import dev.auto.trims.effectHandlers.NightVisionHandler;
+import dev.auto.trims.effectHandlers.SpeedHandler;
+import dev.auto.trims.effectHandlers.TrimManager;
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
-import listeners.GameListeners;
+import dev.auto.trims.listeners.GameListeners;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 

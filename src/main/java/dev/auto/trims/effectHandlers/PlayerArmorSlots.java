@@ -1,4 +1,4 @@
-package effectHandlers;
+package dev.auto.trims.effectHandlers;
 
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.jetbrains.annotations.Nullable;

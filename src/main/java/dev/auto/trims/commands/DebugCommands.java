@@ -1,9 +1,8 @@
-package commands;
+package dev.auto.trims.commands;
 
 import dev.auto.trims.Main;
-import effectHandlers.PlayerArmorSlots;
-import effectHandlers.TrimManager;
-import listeners.GhostStepListener;
+import dev.auto.trims.effectHandlers.PlayerArmorSlots;
+import dev.auto.trims.effectHandlers.TrimManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -11,7 +10,7 @@ import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import particles.GhostStepFX;
+import dev.auto.trims.particles.GhostStepFX;
 
 import java.util.List;
 

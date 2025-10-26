@@ -1,4 +1,4 @@
-package listeners;
+package dev.auto.trims.listeners;
 
 import dev.auto.trims.Main;
 import org.bukkit.Bukkit;
@@ -9,7 +9,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.util.Vector;
-import particles.GhostStepFX;
+import dev.auto.trims.particles.GhostStepFX;
 
 import java.util.UUID;
 

@@ -1,4 +1,4 @@
-package effectHandlers;
+package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
@@ -76,17 +76,29 @@ public class SpeedHandler implements Listener, IBaseEffectHandler {
         event.setCancelled(true);
         p.setAllowFlight(false);
 
-        // TODO Add the visual looking + carrier velocity to this boost
-
         long now = System.currentTimeMillis();
         long last = lastDash.getOrDefault(p.getUniqueId(), 0L);
         if (now - last < 3000) return;
         lastDash.put(p.getUniqueId(), now);
 
-        Vector v = p.getLocation().getDirection().setY(0).normalize().multiply(1.8);
-        v.setY(p.getVelocity().getY() + 0.2);
-        p.setVelocity(v);
+        Vector dir = p.getLocation().getDirection().setY(0).normalize();
+        Vector vel = p.getVelocity();
 
+        Vector boost = dir.multiply(1.2);
+        double yBoost = 0.20;
+
+        Vector newVel = vel.add(boost);
+        newVel.setY(Math.max(vel.getY(), vel.getY() + yBoost));
+
+        double xz = Math.hypot(newVel.getX(), newVel.getZ());
+        double maxXZ = 2.8;
+        if (xz > maxXZ) {
+            double s = maxXZ / xz;
+            newVel.setX(newVel.getX() * s);
+            newVel.setZ(newVel.getZ() * s);
+        }
+
+        p.setVelocity(newVel);
         p.playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_FLAP, 0.8f, 1.4f);
         p.setFallDistance(0f);
     }

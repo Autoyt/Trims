@@ -1,7 +1,6 @@
-package effectHandlers;
+package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
-import net.kyori.adventure.key.Key;
 import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -10,7 +9,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.inventory.meta.trim.TrimPattern;
-import particles.FXUtilities;
+import dev.auto.trims.particles.FXUtilities;
 
 import java.util.UUID;
 
