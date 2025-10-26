@@ -19,51 +19,50 @@ public interface IBaseEffectHandler {
     default void handleEquip(PlayerArmorChangeEvent event, TrimPattern defaultPattern) {
         final Player player = event.getPlayer();
         final UUID uuid = player.getUniqueId();
-        final EquipmentSlot slot = event.getSlot();
+        final ItemStack oldItem = event.getOldItem();
         final ItemStack newItem = event.getNewItem();
-        final int intialInstanceCount = TrimManager.getSlots(uuid).instancesOfTrim(defaultPattern);
 
+        // Rebuild from the player's inventory ONCE to get the AFTER state of the change
+        TrimManager.buildSlots(uuid);
+        final PlayerArmorSlots slots = TrimManager.getSlots(uuid);
+        final int afterCount = slots.instancesOfTrim(defaultPattern);
 
-        // Determine what the pattern should be for this slot (single compute)
-        TrimPattern patternToSet = null;
+        // Derive whether the old/new items had this specific trim pattern
+        boolean oldHas = false;
+        if (oldItem != null && !oldItem.getType().isAir()) {
+            if (oldItem.getItemMeta() instanceof ArmorMeta om && om.hasTrim()) {
+                ArmorTrim t = om.getTrim();
+                oldHas = t != null && defaultPattern.equals(t.getPattern());
+            }
+        }
+        boolean newHas = false;
         if (newItem != null && !newItem.getType().isAir()) {
-            if (newItem.getItemMeta() instanceof ArmorMeta meta && meta.hasTrim()) {
-                ArmorTrim trim = meta.getTrim();
-                // Use equals on values, not reference
-                if (trim != null && defaultPattern.equals(trim.getPattern())) {
-                    patternToSet = trim.getPattern();
-                }
+            if (newItem.getItemMeta() instanceof ArmorMeta nm && nm.hasTrim()) {
+                ArmorTrim t = nm.getTrim();
+                newHas = t != null && defaultPattern.equals(t.getPattern());
             }
         }
 
-        // Update the slot with the determined value (single write)
-        PlayerArmorSlots slots = TrimManager.getSlots(uuid);
-        switch (slot) {
-            case HEAD -> slots.setHelmet(patternToSet);
-            case CHEST -> slots.setChestplate(patternToSet);
-            case LEGS -> slots.setLeggings(patternToSet);
-            case FEET -> slots.setBoots(patternToSet);
-        }
+        // Compute the BEFORE count using the event delta: before = after - (new?1:0) + (old?1:0)
+        final int beforeCount = afterCount - (newHas ? 1 : 0) + (oldHas ? 1 : 0);
 
-        // Optional refresh to rebuild from inventory once after setting
-        TrimManager.buildSlots(uuid);
-        int currentInstanceCount = slots.instancesOfTrim(defaultPattern);
-
+        // Decide sounds/FX based on crossing the threshold
         Location soundEmitter = player.getLocation().add(0, 1, 0);
-        if (currentInstanceCount >= 4 && currentInstanceCount > intialInstanceCount) {
+        if (afterCount >= 4 && beforeCount < 4) {
             soundEmitter.getWorld().playSound(soundEmitter, Sound.ENTITY_EVOKER_PREPARE_SUMMON, 1f, 1f);
             soundEmitter.getWorld().playSound(soundEmitter, Sound.ITEM_GOAT_HORN_SOUND_4, 1f, 1f);
             FXUtilities.lv4Activation(player);
         }
 
-        if (currentInstanceCount < intialInstanceCount) {
+        if (afterCount < beforeCount) {
             player.playSound(player.getLocation(), Sound.BLOCK_BEACON_DEACTIVATE, 1f, 1f);
         }
 
-        if (intialInstanceCount >= 4 && currentInstanceCount < intialInstanceCount) {
+        if (beforeCount >= 4 && afterCount < 4) {
             soundEmitter.getWorld().playSound(soundEmitter, Sound.ENTITY_WITHER_DEATH, 1f, 1f);
         }
 
+        // Generic feedback sound on any equip change
         player.playSound(player.getLocation(), Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, 1f, 1f);
     }
 }

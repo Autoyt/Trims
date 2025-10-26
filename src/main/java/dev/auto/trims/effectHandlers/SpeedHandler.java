@@ -40,9 +40,8 @@ public class SpeedHandler implements Listener, IBaseEffectHandler {
             if (instanceCount >= 4) {
                 lv4Players.add(id);
             }
-            else {
-                lv4Players.remove(id);
-            }
+
+            lv4Players.remove(id);
         }
     }
 
@@ -72,6 +71,7 @@ public class SpeedHandler implements Listener, IBaseEffectHandler {
     public void onDoubleJump(PlayerToggleFlightEvent event) {
         Player p = event.getPlayer();
         if (p.getGameMode() == GameMode.CREATIVE || p.getGameMode() == GameMode.SPECTATOR) return;
+        if (!lv4Players.contains(p.getUniqueId())) return;
 
         event.setCancelled(true);
         p.setAllowFlight(false);
