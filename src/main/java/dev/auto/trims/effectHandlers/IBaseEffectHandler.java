@@ -1,8 +1,10 @@
 package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
+import net.kyori.adventure.key.Key;
 import org.bukkit.Location;
 import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -45,16 +47,11 @@ public interface IBaseEffectHandler {
 
         Location soundEmitter = player.getLocation().add(0, 1, 0);
         if (afterCount >= 4 && beforeCount < 4) {
-            soundEmitter.getWorld().playSound(soundEmitter, Sound.ENTITY_EVOKER_PREPARE_SUMMON, 1f, 1f);
-            soundEmitter.getWorld().playSound(soundEmitter, Sound.ITEM_GOAT_HORN_SOUND_4, 1f, 1f);
+            soundEmitter.getWorld().playSound(soundEmitter, Sound.BLOCK_BEACON_ACTIVATE, 1f, 1f);
             FXUtilities.lv4Activation(player);
         }
-        if (afterCount < beforeCount) {
-            player.playSound(player.getLocation(), Sound.BLOCK_BEACON_DEACTIVATE, 1f, 1f);
-        }
         if (beforeCount >= 4 && afterCount < 4) {
-            soundEmitter.getWorld().playSound(soundEmitter, Sound.ENTITY_WITHER_DEATH, 1f, 1f);
+            soundEmitter.getWorld().playSound(soundEmitter, Sound.BLOCK_BEACON_DEACTIVATE, 1f, 1f);
         }
-        player.playSound(player.getLocation(), Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, 1f, 1f);
     }
 }

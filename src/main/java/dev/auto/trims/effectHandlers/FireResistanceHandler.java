@@ -29,13 +29,8 @@ public class FireResistanceHandler implements IBaseEffectHandler, Listener {
             int instanceCount = slots.instancesOfTrim(this.defaultPattern);
 
             if (instanceCount > 0) {
-                PotionEffect current = player.getPotionEffect(PotionEffectType.FIRE_RESISTANCE);
-                if (current == null || current.getDuration() <= 60) {
-                    player.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 100, 0, false, false));
-                }
-            } else {
-                // Remove FIRE_RESISTANCE when no RIB-trim pieces are worn
-                player.removePotionEffect(PotionEffectType.FIRE_RESISTANCE);
+                // Request via coordinator; it will add/refresh and handle removals when not desired
+                TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 100, 0, false, false));
             }
 
         }

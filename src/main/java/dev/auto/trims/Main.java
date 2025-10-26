@@ -1,11 +1,9 @@
 package dev.auto.trims;
 
 import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.event.PacketListenerPriority;
 import dev.auto.trims.commands.DebugCommands;
-import dev.auto.trims.effectHandlers.FireResistanceHandler;
-import dev.auto.trims.effectHandlers.NightVisionHandler;
-import dev.auto.trims.effectHandlers.SpeedHandler;
-import dev.auto.trims.effectHandlers.TrimManager;
+import dev.auto.trims.effectHandlers.*;
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import dev.auto.trims.listeners.GameListeners;
 import org.bukkit.entity.Player;
@@ -34,11 +32,14 @@ public final class Main extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new SpeedHandler(this), this);
         getServer().getPluginManager().registerEvents(new FireResistanceHandler(this), this);
 
+        InvisibiltyHandler invis = new InvisibiltyHandler(this);
+        getServer().getPluginManager().registerEvents(invis, this);
+        PacketEvents.getAPI().getEventManager().registerListener(invis, PacketListenerPriority.LOW);
+
         DebugCommands debug = new DebugCommands(this);
         Objects.requireNonNull(getCommand("debug")).setExecutor(debug);
         Objects.requireNonNull(getCommand("debug")).setTabCompleter(debug);
 
-        // Start the effect ticker and build slots for all currently online players (covers /reload and late enables)
         TrimManager.start();
         for (Player p : getServer().getOnlinePlayers()) {
             TrimManager.buildSlots(p.getUniqueId());

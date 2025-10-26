@@ -18,6 +18,7 @@ public class GameListeners implements Listener {
         final UUID uuid = player.getUniqueId();
 
         TrimManager.clear(uuid);
+        TrimManager.clearAllEffects(uuid);
         TrimManager.clearEffect(uuid);
 
         if (Bukkit.getOnlinePlayers().isEmpty()) {

@@ -99,13 +99,8 @@ public class SpeedHandler implements Listener, IBaseEffectHandler {
 
             if (instanceCount > 0) {
                 int amplifier = Math.min(instanceCount, 4) - 1;
-                PotionEffect current = player.getPotionEffect(PotionEffectType.SPEED);
-                if (current == null || current.getDuration() <= 1200 || current.getAmplifier() != amplifier) {
-                    player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 2400, amplifier, false, false));
-                }
-            } else {
-                // Remove SPEED when no EYE-trim pieces are worn
-                player.removePotionEffect(PotionEffectType.SPEED);
+                // Request SPEED via coordinator; it will add/refresh and handle removals when not desired
+                TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.SPEED, 2400, amplifier, false, false));
             }
         }
     }
@@ -246,8 +241,6 @@ public class SpeedHandler implements Listener, IBaseEffectHandler {
         bossBars.remove(id);
         dashEnergy.remove(id);
     }
-
-    // TODO add some checks for damaged armor.
 
     @EventHandler
     public void onMove(PlayerMoveEvent event) {

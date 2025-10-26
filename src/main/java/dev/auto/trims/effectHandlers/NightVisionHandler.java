@@ -79,15 +79,11 @@ public class NightVisionHandler implements Listener, IBaseEffectHandler {
                 }
             }
 
+
             // Apply night vision potion if needed (any number of DUNE pieces)
             if (instanceCount > 0) {
-                PotionEffect current = player.getPotionEffect(PotionEffectType.NIGHT_VISION);
-                if (current == null || current.getDuration() <= 1200) {
-                    player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 2400, 0, false, false));
-                }
-            } else {
-                // Remove NIGHT_VISION when no DUNE-trim pieces are worn
-                player.removePotionEffect(PotionEffectType.NIGHT_VISION);
+                // Request via coordinator; it will add/refresh and handle removals when not desired
+                TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.NIGHT_VISION, 2400, 0, false, false));
             }
         }
     }

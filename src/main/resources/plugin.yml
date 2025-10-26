@@ -4,6 +4,7 @@ main: dev.auto.trims.Main
 api-version: '1.21'
 prefix: TRIMS by AutoYT
 authors: [ AutoYT ]
+depend: [packetevents]
 commands:
   debug:
     description: Debug utils

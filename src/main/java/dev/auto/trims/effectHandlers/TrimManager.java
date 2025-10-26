@@ -8,6 +8,7 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.inventory.meta.trim.TrimPattern;
+import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.Nullable;
@@ -19,6 +20,9 @@ public final class TrimManager {
     private static final Main instance = Main.getInstance();
     private static final Map<UUID, PlayerArmorSlots> SLOTS = new ConcurrentHashMap<>();
     private static final Map<UUID, PotionEffectType> EFFECTS = new ConcurrentHashMap<>();
+    // Coordinator state: what effects handlers requested this tick, and what we applied previously
+    private static final Map<UUID, Map<PotionEffectType, PotionEffect>> DESIRED = new ConcurrentHashMap<>();
+    private static final Map<UUID, Map<PotionEffectType, PotionEffect>> APPLIED = new ConcurrentHashMap<>();
 
     public static volatile boolean running = false;
 
@@ -75,7 +79,81 @@ public final class TrimManager {
         }
     }
 
+    /** Remove all effects previously applied by the coordinator for this player and clear state. */
+    public static void clearAllEffects(UUID uuid) {
+        Map<PotionEffectType, PotionEffect> applied = APPLIED.remove(uuid);
+        if (applied == null) return;
+        Player p = Bukkit.getPlayer(uuid);
+        if (p == null) return;
+        for (PotionEffectType t : applied.keySet()) {
+            p.removePotionEffect(t);
+        }
+    }
+
     /** Start the repeating ticker (if not already started). */
+    public static void beginTick() {
+        // Start of a reconciliation cycle: clear desired effects
+        DESIRED.clear();
+    }
+
+    public static void wantEffect(UUID uuid, PotionEffect effect) {
+        if (uuid == null || effect == null) return;
+        DESIRED.computeIfAbsent(uuid, k -> new HashMap<>()).put(effect.getType(), effect);
+    }
+
+    public static void endTick() {
+        // Reconcile desired vs applied and add/remove as needed
+        Set<UUID> ids = new HashSet<>();
+        ids.addAll(APPLIED.keySet());
+        ids.addAll(DESIRED.keySet());
+
+        for (UUID id : ids) {
+            Player p = Bukkit.getPlayer(id);
+            Map<PotionEffectType, PotionEffect> desired = DESIRED.getOrDefault(id, Collections.emptyMap());
+            Map<PotionEffectType, PotionEffect> applied = APPLIED.computeIfAbsent(id, k -> new HashMap<>());
+
+            if (p != null) {
+                // Apply or refresh desired effects
+                for (Map.Entry<PotionEffectType, PotionEffect> e : desired.entrySet()) {
+                    PotionEffectType type = e.getKey();
+                    PotionEffect eff = e.getValue();
+                    PotionEffect prev = applied.get(type);
+
+                    boolean needsApply = prev == null
+                            || prev.getAmplifier() != eff.getAmplifier()
+                            || prev.isAmbient() != eff.isAmbient()
+                            || prev.hasParticles() != eff.hasParticles();
+                    // Always refresh duration to keep it topped up
+                    if (needsApply || true) {
+                        p.addPotionEffect(eff);
+                        applied.put(type, eff);
+                    }
+                }
+
+                // Remove effects we previously applied but are no longer desired
+                Iterator<Map.Entry<PotionEffectType, PotionEffect>> it = applied.entrySet().iterator();
+                while (it.hasNext()) {
+                    Map.Entry<PotionEffectType, PotionEffect> ap = it.next();
+                    if (!desired.containsKey(ap.getKey())) {
+                        p.removePotionEffect(ap.getKey());
+                        it.remove();
+                    }
+                }
+            } else {
+                // Player offline: just sync maps, removals will occur next time they are online
+                APPLIED.put(id, new HashMap<>(desired));
+            }
+
+            // If nothing desired and nothing applied, clean up maps
+            if (desired.isEmpty() && APPLIED.getOrDefault(id, Collections.emptyMap()).isEmpty()) {
+                APPLIED.remove(id);
+            }
+        }
+
+        // Done for this tick
+        DESIRED.clear();
+    }
+
     public static void start() {
         running = true; // enable work right away
         if (ticker == null || ticker.isCancelled()) {
@@ -127,6 +205,7 @@ class EffectUpdateTask implements Runnable {
         if (!TrimManager.running) return;
 
         final long t0 = System.nanoTime();
+        TrimManager.beginTick();
         for (IBaseEffectHandler h : handlers) {
             try {
                 h.onTick();
@@ -135,6 +214,7 @@ class EffectUpdateTask implements Runnable {
                         h.getClass().getSimpleName() + ": " + ex.getMessage());
             }
         }
+        TrimManager.endTick();
         final long ms = (System.nanoTime() - t0) / 1_000_000L;
         plugin.getLogger().fine("Handled " + handlers.size() + " effects in " + ms + "ms");
     }

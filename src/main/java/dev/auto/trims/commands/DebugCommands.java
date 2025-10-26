@@ -1,6 +1,7 @@
 package dev.auto.trims.commands;
 
 import dev.auto.trims.Main;
+import dev.auto.trims.effectHandlers.InvisibiltyHandler;
 import dev.auto.trims.effectHandlers.PlayerArmorSlots;
 import dev.auto.trims.effectHandlers.TrimManager;
 import org.bukkit.Bukkit;
@@ -42,6 +43,7 @@ public class DebugCommands implements TabExecutor {
                 Location loc = nether.getSpawnLocation();
                 p.teleport(loc);
             }
+
 
             case "spawn-ghost-block" -> {
                 GhostStepFX effect = new GhostStepFX();
