@@ -65,14 +65,17 @@ public class NightVisionHandler implements Listener, IBaseEffectHandler {
                 if (lv4Players.remove(id)) {
                     hideNametagTeam.removeEntry(player.getName());
 
-                    // Turn off glow for all targets this viewer was tracking
+                    // Turn off glow for all targets this viewer was tracking, but only if no other viewer still tracks them
                     Set<UUID> targets = glowingTargets.remove(id);
                     if (targets != null) {
                         for (UUID targetId : targets) {
-                            Player target = Bukkit.getPlayer(targetId);
-                            if (target != null) {
-                                target.setGlowing(false);
-                                playerGlowTeam.removeEntry(target.getName());
+                            boolean stillNeeded = glowingTargets.values().stream().anyMatch(set -> set.contains(targetId));
+                            if (!stillNeeded) {
+                                Player target = Bukkit.getPlayer(targetId);
+                                if (target != null) {
+                                    target.setGlowing(false);
+                                    playerGlowTeam.removeEntry(target.getName());
+                                }
                             }
                         }
                     }
@@ -141,10 +144,31 @@ public class NightVisionHandler implements Listener, IBaseEffectHandler {
 
     @EventHandler
     public void onLeave(PlayerQuitEvent event) {
-        lv4Players.remove(event.getPlayer().getUniqueId());
-        glowingTargets.remove(event.getPlayer().getUniqueId());
+        UUID leaverId = event.getPlayer().getUniqueId();
+
+        // Remove viewer status and nametag
+        lv4Players.remove(leaverId);
         hideNametagTeam.removeEntry(event.getPlayer().getName());
+
+        // Turn off glow for targets that were glowing only because of this viewer
+        Set<UUID> targets = glowingTargets.remove(leaverId);
+        if (targets != null) {
+            for (UUID targetId : targets) {
+                boolean stillNeeded = glowingTargets.values().stream().anyMatch(set -> set.contains(targetId));
+                if (!stillNeeded) {
+                    Player target = Bukkit.getPlayer(targetId);
+                    if (target != null) {
+                        target.setGlowing(false);
+                        playerGlowTeam.removeEntry(target.getName());
+                    }
+                }
+            }
+        }
+
+        // If the leaver themselves were glowing (e.g., added as a target elsewhere), remove their entry
         playerGlowTeam.removeEntry(event.getPlayer().getName());
+
+        // Optional: explicitly clear the glowing flag on the leaver
         event.getPlayer().setGlowing(false);
     }
 }
