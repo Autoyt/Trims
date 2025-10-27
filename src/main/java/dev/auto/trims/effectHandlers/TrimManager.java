@@ -209,6 +209,7 @@ class EffectUpdateTask implements Runnable {
         for (IBaseEffectHandler h : handlers) {
             try {
                 h.onTick();
+                h.Tick();
             } catch (Throwable ex) {
                 plugin.getLogger().warning("Error while updating effect " +
                         h.getClass().getSimpleName() + ": " + ex.getMessage());

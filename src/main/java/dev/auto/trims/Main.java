@@ -3,15 +3,18 @@ package dev.auto.trims;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketListenerPriority;
 import dev.auto.trims.commands.DebugCommands;
+import dev.auto.trims.crafting.CraftEventListener;
 import dev.auto.trims.effectHandlers.*;
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import dev.auto.trims.listeners.GameListeners;
+import lombok.Getter;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Objects;
 
 public final class Main extends JavaPlugin {
+    @Getter
     private static Main instance;
 
     @Override
@@ -26,6 +29,9 @@ public final class Main extends JavaPlugin {
         PacketEvents.getAPI().init();
 
         getLogger().info("enabled!");
+
+        // Util calls
+        CraftEventListener.removeCraftingRecipes();
 
         getServer().getPluginManager().registerEvents(new GameListeners(), this);
         getServer().getPluginManager().registerEvents(new NightVisionHandler(this), this);
@@ -50,9 +56,5 @@ public final class Main extends JavaPlugin {
     public void onDisable() {
         instance = null;
         PacketEvents.getAPI().terminate();
-    }
-
-    public static Main getInstance() {
-        return instance;
     }
 }

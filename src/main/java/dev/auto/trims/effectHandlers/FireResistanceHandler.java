@@ -5,7 +5,6 @@ import dev.auto.trims.Main;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -25,8 +24,7 @@ public class FireResistanceHandler implements IBaseEffectHandler, Listener {
     public void onTick() {
         for (Player player : instance.getServer().getOnlinePlayers()) {
             UUID id = player.getUniqueId();
-            PlayerArmorSlots slots = TrimManager.getSlots(id);
-            int instanceCount = slots.instancesOfTrim(this.defaultPattern);
+            int instanceCount = getTrimCount(id, defaultPattern);
 
             if (instanceCount > 0) {
                 // Request via coordinator; it will add/refresh and handle removals when not desired

@@ -53,8 +53,7 @@ public class NightVisionHandler implements Listener, IBaseEffectHandler {
     public void onTick() {
         for (Player player : instance.getServer().getOnlinePlayers()) {
             UUID id = player.getUniqueId();
-            PlayerArmorSlots slots = TrimManager.getSlots(id);
-            int instanceCount = slots.instancesOfTrim(this.defaultPattern);
+            int instanceCount = getTrimCount(id, defaultPattern);
 
             // Maintain LV4 membership and per-tick behavior
             if (instanceCount >= 4) {

@@ -5,8 +5,9 @@ import dev.auto.trims.Main;
 import dev.auto.trims.customEvents.BossBarChangeValueEvent;
 import lombok.Getter;
 import net.kyori.adventure.bossbar.BossBar;
+import net.kyori.adventure.bossbar.BossBar.Color;
+import net.kyori.adventure.bossbar.BossBar.Overlay;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -18,9 +19,8 @@ import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
+
 import java.util.*;
-import net.kyori.adventure.bossbar.BossBar.Overlay;
-import net.kyori.adventure.bossbar.BossBar.Color;
 
 public class SpeedHandler implements Listener, IBaseEffectHandler {
     private final Main instance;
@@ -65,8 +65,7 @@ public class SpeedHandler implements Listener, IBaseEffectHandler {
     public void onTick() {
         for (Player player : instance.getServer().getOnlinePlayers()) {
             UUID id = player.getUniqueId();
-            PlayerArmorSlots slots = TrimManager.getSlots(id);
-            int instanceCount = slots.instancesOfTrim(this.defaultPattern);
+            int instanceCount = getTrimCount(id, defaultPattern);
 
 
             // Maintain LV4 membership used by the dash

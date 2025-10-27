@@ -37,8 +37,7 @@ public class InvisibiltyHandler implements IBaseEffectHandler, Listener, PacketL
     public void onTick() {
         for (Player player : instance.getServer().getOnlinePlayers()) {
             UUID id = player.getUniqueId();
-            PlayerArmorSlots slots = TrimManager.getSlots(id);
-            int instanceCount = slots.instancesOfTrim(this.defaultPattern);
+            int instanceCount = getTrimCount(id, defaultPattern);
 
             if (instanceCount > 0) {
                 TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.INVISIBILITY, 100, 0, false, false));
@@ -49,7 +48,7 @@ public class InvisibiltyHandler implements IBaseEffectHandler, Listener, PacketL
     @EventHandler
     public void onArmorEquip(PlayerArmorChangeEvent event) {
         handleEquip(event, defaultPattern);
-        int instanceCount = TrimManager.getSlots(event.getPlayer().getUniqueId()).instancesOfTrim(this.defaultPattern);
+        int instanceCount = getTrimCount(event.getPlayer().getUniqueId(), defaultPattern);
 
         if (instanceCount >= 4) {
             hidePlayer(event.getPlayer().getUniqueId());
