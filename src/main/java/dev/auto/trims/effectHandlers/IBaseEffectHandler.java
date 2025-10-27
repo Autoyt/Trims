@@ -17,6 +17,20 @@ import java.util.UUID;
 
 public interface IBaseEffectHandler {
     void onTick();
+
+    default void Tick() {
+        for (Player player : Main.getInstance().getServer().getOnlinePlayers()) {
+            OnlinePlayerTick(player);
+        }
+    }
+
+    default void OnlinePlayerTick(Player player) {}
+
+    /** @apiNote Helpers **/
+    default int getTrimCount(UUID uuid, TrimPattern pattern) {
+        PlayerArmorSlots slots = TrimManager.getSlots(uuid);
+        return slots.instancesOfTrim(pattern);
+    }
     default void handleEquip(PlayerArmorChangeEvent event, TrimPattern defaultPattern) {
         final Player player = event.getPlayer();
         final UUID uuid = player.getUniqueId();
