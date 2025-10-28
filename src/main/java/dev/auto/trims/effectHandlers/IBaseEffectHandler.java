@@ -16,7 +16,7 @@ import java.util.UUID;
 public interface IBaseEffectHandler {
     /** @deprecated Use {@link #Tick()} instead then override {@link #OnlinePlayerTick(Player)} */
     @Deprecated(since = "Beta 1")
-    void onTick();
+    default void onTick() {}
 
     default void Tick() {
         for (Player player : Main.getInstance().getServer().getOnlinePlayers()) {

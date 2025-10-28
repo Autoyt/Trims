@@ -37,10 +37,11 @@ public final class Main extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new NightVisionHandler(this), this);
         getServer().getPluginManager().registerEvents(new SpeedHandler(this), this);
         getServer().getPluginManager().registerEvents(new FireResistanceHandler(this), this);
+        getServer().getPluginManager().registerEvents(new LuckHandler(this), this);
 
-        InvisibiltyHandler invis = new InvisibiltyHandler(this);
-        getServer().getPluginManager().registerEvents(invis, this);
-        PacketEvents.getAPI().getEventManager().registerListener(invis, PacketListenerPriority.LOW);
+        InvisibiltyHandler invisHandler = new InvisibiltyHandler(this);
+        getServer().getPluginManager().registerEvents(invisHandler, this);
+        PacketEvents.getAPI().getEventManager().registerListener(invisHandler, PacketListenerPriority.LOW);
 
         DebugCommands debug = new DebugCommands(this);
         Objects.requireNonNull(getCommand("debug")).setExecutor(debug);

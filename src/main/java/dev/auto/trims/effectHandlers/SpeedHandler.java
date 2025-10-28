@@ -104,7 +104,7 @@ public class SpeedHandler implements Listener, IBaseEffectHandler {
         }
     }
 
-    private void handleRearm(PlayerMoveEvent event) {
+    public void handleRearm(PlayerMoveEvent event) {
         Player p = event.getPlayer();
         if (!lv4Players.contains(p.getUniqueId())) {
             p.setAllowFlight(false);
@@ -120,7 +120,7 @@ public class SpeedHandler implements Listener, IBaseEffectHandler {
         }
     }
 
-    private void handleBBIncrease(PlayerMoveEvent event) {
+    public void handleBBIncrease(PlayerMoveEvent event) {
         if (!event.hasChangedBlock()) return;
         Player p = event.getPlayer();
         if (!lv4Players.contains(p.getUniqueId())) return;

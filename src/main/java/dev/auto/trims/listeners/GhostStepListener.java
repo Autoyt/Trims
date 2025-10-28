@@ -104,5 +104,4 @@ public class GhostStepListener implements Listener {
         GhostStepFX fx = new GhostStepFX();
         fx.run(Main.getInstance(), p);
     }
-
 }
