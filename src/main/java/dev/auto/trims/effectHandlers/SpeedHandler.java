@@ -3,6 +3,7 @@ package dev.auto.trims.effectHandlers;
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
 import dev.auto.trims.customEvents.BossBarChangeValueEvent;
+import dev.auto.trims.effectHandlers.heavyEvents.MovementListener;
 import lombok.Getter;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.bossbar.BossBar.Color;
@@ -22,7 +23,7 @@ import org.bukkit.util.Vector;
 
 import java.util.*;
 
-public class SpeedHandler implements Listener, IBaseEffectHandler {
+public class SpeedHandler implements Listener, IBaseEffectHandler, MovementListener {
     private final Main instance;
     private final TrimPattern defaultPattern = TrimPattern.EYE;
     @Getter
@@ -67,8 +68,6 @@ public class SpeedHandler implements Listener, IBaseEffectHandler {
             UUID id = player.getUniqueId();
             int instanceCount = getTrimCount(id, defaultPattern);
 
-
-            // Maintain LV4 membership used by the dash
             if (instanceCount >= 4) {
                 lv4Players.add(id);
                 showBossBar(id);
@@ -82,7 +81,6 @@ public class SpeedHandler implements Listener, IBaseEffectHandler {
                 bossBars.remove(player.getUniqueId());
             }
 
-            // Arm/disarm double-jump based on lv4 membership and grounded state (authoritative fallback once per tick)
             if (player.getGameMode() != GameMode.CREATIVE && player.getGameMode() != GameMode.SPECTATOR) {
                 if (lv4Players.contains(id)) {
                     // simple grounded check
@@ -98,7 +96,6 @@ public class SpeedHandler implements Listener, IBaseEffectHandler {
 
             if (instanceCount > 0) {
                 int amplifier = Math.min(instanceCount, 4) - 1;
-                // Request SPEED via coordinator; it will add/refresh and handle removals when not desired
                 TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.SPEED, 2400, amplifier, false, false));
             }
         }
@@ -242,13 +239,6 @@ public class SpeedHandler implements Listener, IBaseEffectHandler {
     }
 
     @EventHandler
-    public void onMove(PlayerMoveEvent event) {
-        handleRearm(event);
-        handleBBIncrease(event);
-
-    }
-
-    @EventHandler
     public void onDoubleJump(PlayerToggleFlightEvent event) {
         Player p = event.getPlayer();
         if (p.getGameMode() == GameMode.CREATIVE || p.getGameMode() == GameMode.SPECTATOR) return;
@@ -296,6 +286,12 @@ public class SpeedHandler implements Listener, IBaseEffectHandler {
         float pitch = 1.0f + 0.4f * s; // 1.0..1.4
         p.playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_FLAP, vol, pitch);
         p.setFallDistance(0f);
+    }
+
+    @Override
+    public void onMovement(PlayerMoveEvent event) {
+        handleRearm(event);
+        handleBBIncrease(event);
     }
 }
 

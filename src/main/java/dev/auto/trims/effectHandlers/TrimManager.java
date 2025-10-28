@@ -160,18 +160,16 @@ public final class TrimManager {
             ticker = Bukkit.getScheduler().runTaskTimer(
                 instance,
                 new EffectUpdateTask(handlers),
-                20L, // initial delay
-                20L  // period
+                20L,
+                20L
             );
         }
     }
 
-    /** Stop doing work (ticker stays scheduled but will early-return). */
     public static void pause() {
         running = false;
     }
 
-    /** Fully shutdown and release the scheduler task. */
     public static void stop() {
         running = false;
         if (ticker != null) {

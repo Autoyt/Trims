@@ -1,6 +1,8 @@
 package dev.auto.trims.particles;
 
 import dev.auto.trims.Main;
+import dev.auto.trims.particles.utils.CircleFX;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.World;
@@ -34,5 +36,11 @@ public class FXUtilities {
                 }
             }
         }.runTaskTimer(Main.getInstance(), 0L,1L);
+    }
+
+    public static CircleFX ConduitFX(Player p) {
+        Color color = Color.fromARGB(204, 2, 173, 39);
+        Particle.DustOptions options = new Particle.DustOptions(color, 0.75f);
+        return new CircleFX(p).setParticle(Particle.DUST).setRadius(4).setPoints(144).setDustOptions(options).run();
     }
 }

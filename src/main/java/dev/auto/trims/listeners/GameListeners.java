@@ -1,14 +1,19 @@
 package dev.auto.trims.listeners;
 
 import dev.auto.trims.Main;
+import dev.auto.trims.effectHandlers.IBaseEffectHandler;
 import dev.auto.trims.effectHandlers.TrimManager;
+import dev.auto.trims.effectHandlers.heavyEvents.MovementListener;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class GameListeners implements Listener {
@@ -23,6 +28,17 @@ public class GameListeners implements Listener {
 
         if (Bukkit.getOnlinePlayers().isEmpty()) {
             TrimManager.stop();
+        }
+    }
+
+    @EventHandler
+    public void onMove(PlayerMoveEvent event) {
+        if (!event.hasChangedPosition()) return;
+
+        for (IBaseEffectHandler h : TrimManager.handlers) {
+            if (h instanceof MovementListener m) {
+                m.onMovement(event);
+            }
         }
     }
 
