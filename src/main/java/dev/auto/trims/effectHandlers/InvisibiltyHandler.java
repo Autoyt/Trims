@@ -40,7 +40,7 @@ public class InvisibiltyHandler implements IBaseEffectHandler, Listener, PacketL
             int instanceCount = getTrimCount(id, defaultPattern);
 
             if (instanceCount > 0) {
-                TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.INVISIBILITY, 100, 0, false, false));
+                TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.INVISIBILITY, 3600, 0, false, false));
             }
         }
     }

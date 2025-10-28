@@ -26,7 +26,7 @@ public class DolphinsGraceHandler implements IBaseEffectHandler, Listener {
         int instanceCount = getTrimCount(id, defaultPattern);
 
         if (instanceCount > 0) {
-            TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.DOLPHINS_GRACE, 600, 0, false, false));
+            TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.DOLPHINS_GRACE, 3600, 0, false, false));
         }
     }
 

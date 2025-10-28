@@ -51,7 +51,7 @@ public class ConduitPowerHandler implements IBaseEffectHandler, Listener, Runnab
         }
 
         if (instanceCount > 0) {
-            TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.CONDUIT_POWER, 2400, 0, false, false));
+            TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.CONDUIT_POWER, 3600, 0, false, false));
         }
         else {
             TrimManager.clearEffect(id);
@@ -91,7 +91,7 @@ public class ConduitPowerHandler implements IBaseEffectHandler, Listener, Runnab
     public void handleNearby(Player player) {
         PotionEffect active = player.getPotionEffect(PotionEffectType.CONDUIT_POWER);
         if (active == null || active.getDuration() < 40) {
-            PotionEffect nearbyEffect = new PotionEffect(PotionEffectType.CONDUIT_POWER, 60, 0, false, false);
+            PotionEffect nearbyEffect = new PotionEffect(PotionEffectType.CONDUIT_POWER, 3600, 0, false, false);
             player.addPotionEffect(nearbyEffect);
         }
     }

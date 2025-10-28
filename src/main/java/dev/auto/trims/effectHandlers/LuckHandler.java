@@ -49,7 +49,7 @@ public class LuckHandler implements IBaseEffectHandler, Listener {
 
         if (instanceCount > 0) {
             int amplifier = Math.min(instanceCount, 4) - 1;
-            TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.LUCK, 2400, amplifier, false, false));
+            TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.LUCK, 3600, amplifier, false, false));
         }
     }
 

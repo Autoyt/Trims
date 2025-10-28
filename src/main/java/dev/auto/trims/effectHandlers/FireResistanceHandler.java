@@ -28,7 +28,7 @@ public class FireResistanceHandler implements IBaseEffectHandler, Listener {
 
             if (instanceCount > 0) {
                 // Request via coordinator; it will add/refresh and handle removals when not desired
-                TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 100, 0, false, false));
+                TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 3600, 0, false, false));
             }
 
         }

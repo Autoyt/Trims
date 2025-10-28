@@ -96,19 +96,21 @@ public class SpeedHandler implements Listener, IBaseEffectHandler, MovementListe
 
             if (instanceCount > 0) {
                 int amplifier = Math.min(instanceCount, 4) - 1;
-                TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.SPEED, 2400, amplifier, false, false));
+                TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.SPEED, 3600, amplifier, false, false));
             }
         }
     }
 
     public void handleRearm(PlayerMoveEvent event) {
         Player p = event.getPlayer();
+        // Never modify flight for creative/spectator players
+        if (p.getGameMode() == GameMode.CREATIVE || p.getGameMode() == GameMode.SPECTATOR) return;
+
         if (!lv4Players.contains(p.getUniqueId())) {
+            // Only disarm flight for survival/adventure
             p.setAllowFlight(false);
             return;
         }
-
-        if (p.getGameMode() == GameMode.CREATIVE || p.getGameMode() == GameMode.SPECTATOR) return;
 
         // simple grounded check
         if (p.isOnGround() || p.getLocation().subtract(0, 0.1, 0).getBlock().getType() != Material.AIR) {
@@ -220,9 +222,11 @@ public class SpeedHandler implements Listener, IBaseEffectHandler, MovementListe
                 if (bar != null) player.hideBossBar(bar);
                 bossBars.remove(id);
             }
-            // Ensure flight is disabled when losing LV4
-            if (player.getAllowFlight()) player.setAllowFlight(false);
-            player.setFlying(false);
+            // Ensure flight is disabled when losing LV4 (but never touch creative/spectator)
+            if (player.getGameMode() != GameMode.CREATIVE && player.getGameMode() != GameMode.SPECTATOR) {
+                if (player.getAllowFlight()) player.setAllowFlight(false);
+                player.setFlying(false);
+            }
         }
     }
 
