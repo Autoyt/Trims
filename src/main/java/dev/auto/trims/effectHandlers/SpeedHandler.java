@@ -289,7 +289,7 @@ public class SpeedHandler implements Listener, IBaseEffectHandler, MovementListe
         float vol = 0.25f + 0.75f * s; // 0.25..1.0
         float pitch = 1.0f + 0.4f * s; // 1.0..1.4
         p.playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_FLAP, vol, pitch);
-        p.setFallDistance(0f);
+        // Do not reset fall distance here; players should take fall damage by default after dashing
     }
 
     @Override
