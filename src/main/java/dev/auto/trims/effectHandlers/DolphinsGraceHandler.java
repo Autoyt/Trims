@@ -6,6 +6,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.meta.trim.TrimPattern;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+
+import java.util.UUID;
 
 public class DolphinsGraceHandler implements IBaseEffectHandler, Listener {
     private final Main instance;
@@ -18,7 +22,12 @@ public class DolphinsGraceHandler implements IBaseEffectHandler, Listener {
 
     @Override
     public void onlinePlayerTick(Player player) {
+        UUID id = player.getUniqueId();
+        int instanceCount = getTrimCount(id, defaultPattern);
 
+        if (instanceCount > 0) {
+            TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.DOLPHINS_GRACE, 600, 0, false, false));
+        }
     }
 
     @EventHandler
