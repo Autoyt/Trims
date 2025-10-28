@@ -36,7 +36,7 @@ public class LuckHandler implements IBaseEffectHandler, Listener {
     }
 
     @Override
-    public void OnlinePlayerTick(Player player) {
+    public void onlinePlayerTick(Player player) {
         UUID id = player.getUniqueId();
         int instanceCount = getTrimCount(id, defaultPattern);
 

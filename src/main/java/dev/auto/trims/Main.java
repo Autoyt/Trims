@@ -28,7 +28,7 @@ public final class Main extends JavaPlugin {
         instance = this;
         PacketEvents.getAPI().init();
 
-        getLogger().info("enabled!");
+        getLogger().info("enabled! lol");
 
         // Util calls
         CraftEventListener.removeCraftingRecipes();
@@ -38,6 +38,7 @@ public final class Main extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new SpeedHandler(this), this);
         getServer().getPluginManager().registerEvents(new FireResistanceHandler(this), this);
         getServer().getPluginManager().registerEvents(new LuckHandler(this), this);
+        getServer().getPluginManager().registerEvents(new LevitationHandler(this), this);
 
         InvisibiltyHandler invisHandler = new InvisibiltyHandler(this);
         getServer().getPluginManager().registerEvents(invisHandler, this);

@@ -14,17 +14,17 @@ import org.bukkit.inventory.meta.trim.TrimPattern;
 import java.util.UUID;
 
 public interface IBaseEffectHandler {
-    /** @deprecated Use {@link #Tick()} instead then override {@link #OnlinePlayerTick(Player)} */
+    /** @deprecated Use {@link #Tick()} instead then override {@link #onlinePlayerTick(Player)} */
     @Deprecated(since = "Beta 1")
     default void onTick() {}
 
     default void Tick() {
         for (Player player : Main.getInstance().getServer().getOnlinePlayers()) {
-            OnlinePlayerTick(player);
+            onlinePlayerTick(player);
         }
     }
 
-    default void OnlinePlayerTick(Player player) {}
+    default void onlinePlayerTick(Player player) {}
 
     /** @apiNote Helpers **/
     default int getTrimCount(UUID uuid, TrimPattern pattern) {

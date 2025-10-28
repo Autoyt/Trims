@@ -65,3 +65,65 @@ processResources {
         expand props
     }
 }
+
+
+// ---- Deployment helpers: copy plugin jar and start server window (Windows) ----
+
+def serverDir = file("${rootDir}\\server")
+def startScriptWin = new File(serverDir, "run.bat")
+def pluginsDir = new File(serverDir, "plugins")
+
+// Copies the built plugin jar into server/plugins
+tasks.register('copyPluginJar', Copy) {
+    dependsOn tasks.named('jar')
+    from tasks.named('jar').flatMap { it.archiveFile }
+    into pluginsDir
+    doFirst {
+        if (!pluginsDir.exists()) {
+            pluginsDir.mkdirs()
+        }
+    }
+}
+
+// Opens a new terminal window and runs start.bat inside the server directory (Windows)
+tasks.register('restartServer') {
+    group = 'deployment'
+    description = 'Opens a new terminal window and runs server/start.bat (Windows).'
+    doLast {
+        if (!serverDir.exists()) {
+            throw new GradleException("Server directory not found at: ${serverDir}")
+        }
+        if (System.properties['os.name'].toLowerCase().contains('win')) {
+            if (!startScriptWin.exists()) {
+                throw new GradleException("start.bat not found in ${serverDir}. Please add it, or use the runServer task instead.")
+            }
+            exec {
+                workingDir serverDir
+                // 'start' opens a new window; 'cmd /k' keeps it open after the server stops
+                commandLine 'cmd', '/c', 'start', '""', 'cmd', '/k', 'run.bat'
+            }
+        } else {
+            println "Non-Windows OS detected. Skipping Windows start.bat. Consider using the runServer task."
+        }
+    }
+}
+
+// Convenience task: build -> copy jar -> open server window
+tasks.register('deployPlugin') {
+    group = 'deployment'
+    description = 'Builds the plugin, copies it to server/plugins, and opens a terminal window to start the server.'
+    dependsOn 'build', 'copyPluginJar'
+    finalizedBy 'restartServer'
+}
+
+
+// Auto-deploy hook: after every build, copy the jar and open a server window
+// Note: This will start a new server window on every successful build.
+// If you want manual control instead, run: gradlew deployPlugin
+tasks.named('build') {
+    finalizedBy 'copyPluginJar'
+}
+
+tasks.named('copyPluginJar') {
+    finalizedBy 'restartServer'
+}
