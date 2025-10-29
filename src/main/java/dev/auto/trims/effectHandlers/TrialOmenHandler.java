@@ -91,104 +91,6 @@ public class TrialOmenHandler implements IBaseEffectHandler, Listener {
         lv4Players.remove(id);
     }
 
-    @EventHandler
-    public void onSlotChange(PlayerItemHeldEvent event) {
-        Player player = event.getPlayer();
-        UUID id = player.getUniqueId();
-        if (!lv4Players.contains(id)) return;
-
-        ItemStack mainhand = player.getInventory().getItem(event.getNewSlot());
-        if (mainhand == null) return;
-
-        if (mainhand.getType() == Material.MACE) {
-            Component message = MiniMessage.miniMessage().deserialize("<red><bold>You can't use that while you're in the trial omen effect!");
-            player.sendMessage(message);
-            ItemStackUtils.enforceMaceBan(player);
-            event.setCancelled(true);
-        }
-    }
-
-    @EventHandler
-    public void onSwapHands(PlayerSwapHandItemsEvent event) {
-        Player player = event.getPlayer();
-        UUID id = player.getUniqueId();
-        if (!lv4Players.contains(id)) return;
-
-        ItemStack newMain = event.getOffHandItem();
-        if (newMain != null && newMain.getType() == Material.MACE) {
-            Component message = MiniMessage.miniMessage().deserialize("<red><bold>You can't use that while you're in the trial omen effect!");
-            player.sendMessage(message);
-            ItemStackUtils.enforceMaceBan(player);
-            event.setCancelled(true);
-        }
-    }
-
-    @EventHandler(ignoreCancelled = true)
-    public void onClick(InventoryClickEvent e) {
-        if (!(e.getWhoClicked() instanceof Player p)) return;
-        if (!lv4Players.contains(p.getUniqueId())) return;
-
-        if (e.getClick() == ClickType.SWAP_OFFHAND) {
-            ItemStack hovered = e.getCurrentItem();
-            ItemStack offhand = p.getInventory().getItemInOffHand();
-            boolean involvesMace = (hovered != null && hovered.getType() == Material.MACE)
-                    || (offhand != null && offhand.getType() == Material.MACE);
-            if (involvesMace) {
-                Component message = MiniMessage.miniMessage().deserialize("<red><bold>You can't use that while you're in the trial omen effect!");
-                p.sendMessage(message);
-                ItemStackUtils.enforceMaceBan(p);
-                e.setCancelled(true);
-                return;
-            }
-        }
-
-        if (e.getClick() == ClickType.NUMBER_KEY) {
-            int hb = e.getHotbarButton();
-            int held = p.getInventory().getHeldItemSlot();
-            if (hb == held) {
-                ItemStack hovered = e.getCurrentItem();
-                ItemStack hotbarItem = p.getInventory().getItem(hb);
-                boolean involvesMace = (hovered != null && hovered.getType() == Material.MACE)
-                        || (hotbarItem != null && hotbarItem.getType() == Material.MACE);
-                if (involvesMace) {
-                    Component message = MiniMessage.miniMessage().deserialize("<red><bold>You can't use that while you're in the trial omen effect!");
-                    p.sendMessage(message);
-                    e.setCancelled(true);
-                    return;
-                }
-            }
-        }
-
-        if (e.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
-            ItemStack current = e.getCurrentItem();
-            if (current != null && current.getType() == Material.MACE) {
-                Component message = MiniMessage.miniMessage().deserialize("<red><bold>You can't use that while you're in the trial omen effect!");
-                p.sendMessage(message);
-                e.setCancelled(true);
-                return;
-            }
-        }
-
-        ItemStack cursor = e.getCursor();
-        ItemStack current = e.getCurrentItem();
-        boolean movingMace = (cursor != null && cursor.getType() == Material.MACE)
-                || (current != null && current.getType() == Material.MACE);
-        if (!movingMace) return;
-
-        if (e.getSlot() == 40) {
-            ItemStackUtils.enforceMaceBan(p);
-            e.setCancelled(true);
-            return;
-        }
-
-        if (e.getClickedInventory() instanceof PlayerInventory) {
-            int held = p.getInventory().getHeldItemSlot();
-            if (e.getSlotType() == InventoryType.SlotType.QUICKBAR && e.getSlot() == held) {
-                ItemStackUtils.enforceMaceBan(p);
-                e.setCancelled(true);
-            }
-        }
-    }
 
     @EventHandler
     public void onArmorEquip(PlayerArmorChangeEvent event) {
@@ -202,18 +104,5 @@ public class TrialOmenHandler implements IBaseEffectHandler, Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         ItemStackUtils.enforceMaceBan(event.getPlayer());
-    }
-
-    @EventHandler
-    public void onRespawn(PlayerRespawnEvent event) {
-        ItemStackUtils.enforceMaceBan(event.getPlayer());
-    }
-
-    @EventHandler(ignoreCancelled = true)
-    public void onPickup(EntityPickupItemEvent event) {
-        if (!(event.getEntity() instanceof Player p)) return;
-        if (!lv4Players.contains(p.getUniqueId())) return;
-        if (event.getItem().getItemStack().getType() != Material.MACE) return;
-        Bukkit.getScheduler().runTask(Main.getInstance(), () -> ItemStackUtils.enforceMaceBan(p));
     }
 }
