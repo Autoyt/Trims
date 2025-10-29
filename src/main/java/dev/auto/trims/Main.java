@@ -6,11 +6,10 @@ import dev.auto.trims.commands.DebugCommands;
 import dev.auto.trims.crafting.CraftEventListener;
 import dev.auto.trims.crafting.CraftUtils;
 import dev.auto.trims.effectHandlers.*;
-import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import dev.auto.trims.listeners.GameListeners;
+import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import lombok.Getter;
 import org.bukkit.Bukkit;
-import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -44,6 +43,8 @@ public final class Main extends JavaPlugin {
         pl.registerEvents(new LevitationHandler(this), this);
         pl.registerEvents(new DolphinsGraceHandler(this), this);
         pl.registerEvents(new TrialOmenHandler(this), this);
+        pl.registerEvents(new HeroOfTheVillagerHandler(this), this);
+        pl.registerEvents(new SuicideVestHandler(this), this);
 
         ConduitPowerHandler conduitHandler = new ConduitPowerHandler(this);
         pl.registerEvents(conduitHandler, this);

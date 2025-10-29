@@ -50,9 +50,6 @@ public class HeroOfTheVillagerHandler implements IBaseEffectHandler, Listener, R
         if (instanceCount > 0) {
             TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE, 3600, 0, false, false));
         }
-        else {
-            TrimManager.clearEffect(id);
-        }
     }
 
     @Override

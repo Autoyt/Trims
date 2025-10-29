@@ -39,7 +39,13 @@ public class FXUtilities {
     }
 
     public static CircleFX ConduitFX(Player p) {
-        Color color = Color.fromARGB(204, 2, 173, 39);
+        Color color = Color.fromARGB(204, 15, 166, 236);
+        Particle.DustOptions options = new Particle.DustOptions(color, 0.75f);
+        return new CircleFX(p).setParticle(Particle.DUST).setRadius(4).setPoints(144).setDustOptions(options).run();
+    }
+
+    public static CircleFX HeroOfTheVillagerFX(Player p) {
+        Color color = Color.fromARGB(204, 15, 166, 45);
         Particle.DustOptions options = new Particle.DustOptions(color, 0.75f);
         return new CircleFX(p).setParticle(Particle.DUST).setRadius(4).setPoints(144).setDustOptions(options).run();
     }

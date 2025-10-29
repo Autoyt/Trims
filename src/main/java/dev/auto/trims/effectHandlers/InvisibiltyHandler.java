@@ -11,10 +11,12 @@ import com.github.retrooper.packetevents.protocol.player.Equipment;
 import com.github.retrooper.packetevents.protocol.player.EquipmentSlot;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityEquipment;
 import dev.auto.trims.Main;
+import dev.auto.trims.utils.ItemStackUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.potion.PotionEffect;
@@ -26,6 +28,7 @@ public class InvisibiltyHandler implements IBaseEffectHandler, Listener, PacketL
     private final Main instance;
     private final TrimPattern defaultPattern = TrimPattern.WILD;
     private final Set<UUID> hiddenTargets = new HashSet<>();
+    private final Set<UUID> lv4Players = new HashSet<>();
     private static final ItemStack air = ItemStack.builder().type(ItemTypes.AIR).amount(1).build();
 
     public InvisibiltyHandler(Main instance) {
@@ -38,6 +41,13 @@ public class InvisibiltyHandler implements IBaseEffectHandler, Listener, PacketL
         for (Player player : instance.getServer().getOnlinePlayers()) {
             UUID id = player.getUniqueId();
             int instanceCount = getTrimCount(id, defaultPattern);
+
+            if (instanceCount >= 4) {
+                lv4Players.add(id);
+            }
+            else {
+                lv4Players.remove(id);
+            }
 
             if (instanceCount > 0) {
                 TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.INVISIBILITY, 3600, 0, false, false));
@@ -54,15 +64,40 @@ public class InvisibiltyHandler implements IBaseEffectHandler, Listener, PacketL
 
         if (instanceCount >= 4) {
             hidePlayer(event.getPlayer().getUniqueId());
+            lv4Players.add(event.getPlayer().getUniqueId());
         }
         else {
             showPlayer(event.getPlayer().getUniqueId());
+            lv4Players.remove(event.getPlayer().getUniqueId());
         }
     }
 
+    @EventHandler
+    public void onSlotChange(PlayerItemHeldEvent event) {
+        Player player = event.getPlayer();
+        UUID id = player.getUniqueId();
+
+        if (!lv4Players.contains(id)) {
+            return;
+        }
+
+        org.bukkit.inventory.ItemStack mainhand = player.getInventory().getItem(event.getNewSlot());
+        org.bukkit.inventory.ItemStack offhand = player.getInventory().getItemInOffHand();
+
+        // Show the player if they are holding any weapon in either hand; otherwise keep them hidden
+        if (ItemStackUtils.isWeapon(offhand) || ItemStackUtils.isWeapon(mainhand)) {
+            showPlayer(id);
+        }
+        else {
+            hidePlayer(id);
+        }
+    }
+
+    @EventHandler
     public void onLeave(PlayerQuitEvent event) {
         UUID id = event.getPlayer().getUniqueId();
         hiddenTargets.remove(id);
+        lv4Players.remove(event.getPlayer().getUniqueId());
     }
 
     public void hidePlayer(UUID id) {
@@ -94,11 +129,14 @@ public class InvisibiltyHandler implements IBaseEffectHandler, Listener, PacketL
         if (target == null) return;
 
         for (Player viewer : Bukkit.getOnlinePlayers()){
+            if (viewer == target) continue; // don't send to the target themselves
             viewer.sendEquipmentChange(target, Map.of(
                 org.bukkit.inventory.EquipmentSlot.HEAD, target.getEquipment().getHelmet(),
                 org.bukkit.inventory.EquipmentSlot.CHEST, target.getEquipment().getChestplate(),
                 org.bukkit.inventory.EquipmentSlot.LEGS, target.getEquipment().getLeggings(),
-                org.bukkit.inventory.EquipmentSlot.FEET, target.getEquipment().getBoots()
+                org.bukkit.inventory.EquipmentSlot.FEET, target.getEquipment().getBoots(),
+                org.bukkit.inventory.EquipmentSlot.HAND, target.getEquipment().getItemInMainHand(),
+                org.bukkit.inventory.EquipmentSlot.OFF_HAND, target.getEquipment().getItemInOffHand()
             ));
         }
     }

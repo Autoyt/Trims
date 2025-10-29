@@ -1,17 +1,18 @@
 package dev.auto.trims.commands;
 
 import dev.auto.trims.Main;
-import dev.auto.trims.effectHandlers.InvisibiltyHandler;
 import dev.auto.trims.effectHandlers.PlayerArmorSlots;
 import dev.auto.trims.effectHandlers.TrimManager;
+import dev.auto.trims.particles.GhostStepFX;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.command.*;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import dev.auto.trims.particles.GhostStepFX;
 
 import java.util.List;
 
@@ -44,6 +45,18 @@ public class DebugCommands implements TabExecutor {
                 p.teleport(loc);
             }
 
+            case "heal" -> {
+                Player p = (Player) sender;
+                p.setHealth(20);
+                p.setFoodLevel(20);
+            }
+
+            case "explode" -> {
+                Player p = (Player) sender;
+                Location loc = p.getLocation();
+                float power = args.length > 1 ? Float.parseFloat(args[1]) : 1f;
+                loc.getWorld().createExplosion(loc, power);
+            }
 
             case "spawn-ghost-block" -> {
                 GhostStepFX effect = new GhostStepFX();
@@ -73,7 +86,7 @@ public class DebugCommands implements TabExecutor {
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command,
                                                 @NotNull String label, @NotNull String[] args) {
         if (!sender.hasPermission("trims.debug")) return List.of();
-        if (args.length == 1) return List.of("min-fall-velocity", "spawn-ghost-block", "toggle-dj", "armor-profile", "nether");
+        if (args.length == 1) return List.of("spawn-ghost-block", "armor-profile", "nether", "explode");
 
         if (args.length == 2 && args[0].equalsIgnoreCase("min-fall-velocity"))
             return List.of("-0.08", "-0.10", "-0.06");
