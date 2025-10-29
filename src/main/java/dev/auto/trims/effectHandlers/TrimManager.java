@@ -124,8 +124,11 @@ public final class TrimManager {
                             || prev.isAmbient() != eff.isAmbient()
                             || prev.hasParticles() != eff.hasParticles();
                     // Always refresh duration to keep it topped up
+                    // Important: Bukkit will not replace a stronger effect with a weaker one unless forced.
+                    // We only force if we previously applied a stronger amplifier and now want to downgrade.
+                    boolean force = prev != null && eff.getAmplifier() < prev.getAmplifier();
                     if (needsApply || true) {
-                        p.addPotionEffect(eff);
+                        p.addPotionEffect(eff, force);
                         applied.put(type, eff);
                     }
                 }

@@ -34,5 +34,11 @@
     "name": "_Waterframe_",
     "level": 4,
     "bypassesPlayerLimit": false
+  },
+  {
+    "uuid": "31e5d3ed-62f7-3881-b488-22c468049f0f",
+    "name": "ffnwy",
+    "level": 4,
+    "bypassesPlayerLimit": false
   }
 ]

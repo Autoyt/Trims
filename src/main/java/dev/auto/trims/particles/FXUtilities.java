@@ -49,4 +49,10 @@ public class FXUtilities {
         Particle.DustOptions options = new Particle.DustOptions(color, 0.75f);
         return new CircleFX(p).setParticle(Particle.DUST).setRadius(4).setPoints(144).setDustOptions(options).run();
     }
+
+    public static CircleFX AbsorptionFX(Player p) {
+        Color color = Color.fromARGB(0xFFD6392E);
+        Particle.DustOptions options = new Particle.DustOptions(color, 2f);
+        return new CircleFX(p).setParticle(Particle.DUST).setRadius(12).setPoints(160).setDustOptions(options).run();
+    }
 }

@@ -35,7 +35,7 @@ public class HeroOfTheVillagerHandler implements IBaseEffectHandler, Listener, R
 
         if (instanceCount >= 4) {
             if (!fx.containsKey(id)) {
-                fx.put(id, FXUtilities.ConduitFX(player));
+                fx.put(id, FXUtilities.HeroOfTheVillagerFX(player));
             }
             lv4Players.add(id);
         }

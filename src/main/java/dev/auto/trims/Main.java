@@ -10,6 +10,7 @@ import dev.auto.trims.listeners.GameListeners;
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import lombok.Getter;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -19,6 +20,8 @@ import java.util.Objects;
 public final class Main extends JavaPlugin {
     @Getter
     private static Main instance;
+    @Getter
+    private FileConfiguration config;
 
     @Override
     public void onLoad() {
@@ -35,6 +38,10 @@ public final class Main extends JavaPlugin {
         // Util calls
         CraftUtils.removeCraftingRecipes();
 
+        // Config
+        saveDefaultConfig();
+        config = getConfig();
+
         pl.registerEvents(new GameListeners(), this);
         pl.registerEvents(new NightVisionHandler(this), this);
         pl.registerEvents(new SpeedHandler(this), this);
@@ -45,6 +52,9 @@ public final class Main extends JavaPlugin {
         pl.registerEvents(new TrialOmenHandler(this), this);
         pl.registerEvents(new HeroOfTheVillagerHandler(this), this);
         pl.registerEvents(new SuicideVestHandler(this), this);
+        pl.registerEvents(new HasteHandler(this), this);
+        pl.registerEvents(new AbsorptionListener(this), this);
+        pl.registerEvents(new JumpBoostHandler(this), this);
 
         ConduitPowerHandler conduitHandler = new ConduitPowerHandler(this);
         pl.registerEvents(conduitHandler, this);

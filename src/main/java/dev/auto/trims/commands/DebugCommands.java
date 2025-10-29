@@ -45,6 +45,12 @@ public class DebugCommands implements TabExecutor {
                 p.teleport(loc);
             }
 
+            case "rc" -> {
+                Main.getInstance().reloadConfig();
+                Player p = (Player) sender;
+                p.sendMessage("Reloaded config!");
+            }
+
             case "heal" -> {
                 Player p = (Player) sender;
                 p.setHealth(20);
