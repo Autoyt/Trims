@@ -138,7 +138,7 @@ public class SpeedHandler implements Listener, IBaseEffectHandler, MovementListe
         double dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
         if (dist == 0.0 || dist > 6.0) return;
 
-        float value = (float) (dist * p.getVelocity().length() / 30);
+        float value = (float) (dist * p.getVelocity().length() / 50);
         Bukkit.getPluginManager().callEvent(new BossBarChangeValueEvent(p.getUniqueId(), value));
     }
 
@@ -261,14 +261,13 @@ public class SpeedHandler implements Listener, IBaseEffectHandler, MovementListe
         Vector dir = p.getLocation().getDirection().setY(0).normalize();
         Vector vel = p.getVelocity();
 
-        double horizMult = 1.3 * s;      // full charge = 1.3x boost
-        double yBoost = 0.10 * s;     // full charge = +0.10 Y
+        double horizMult = 1.25 * s;      // full charge = 1.3x boost
+        double yBoost = 0.15 * s;     // full charge = +0.10 Y
         Vector boost = dir.multiply(horizMult);
 
         Vector newVel = vel.add(boost);
         newVel.setY(Math.max(vel.getY(), vel.getY() + yBoost));
 
-        // Cap only when there is some strength to avoid slowing the player at 0 charge
         if (s > 0.0f) {
             double xz = Math.hypot(newVel.getX(), newVel.getZ());
             double maxXZ = 2.8 * s; // full charge cap = 2.8
@@ -317,7 +316,7 @@ class EnergyRechargeTask implements Runnable {
                 final Float energy = handler.getDashEnergy(id);
                 if (energy >= 1.0f) continue;
 
-                Float addIncrement = 1.0f / 100f;
+                Float addIncrement = 1.0f / 165f;
                 Bukkit.getPluginManager().callEvent(new BossBarChangeValueEvent(id, addIncrement));
             }
         }

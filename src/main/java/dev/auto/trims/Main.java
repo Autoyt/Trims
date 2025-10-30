@@ -55,6 +55,8 @@ public final class Main extends JavaPlugin {
         pl.registerEvents(new HasteHandler(this), this);
         pl.registerEvents(new AbsorptionListener(this), this);
         pl.registerEvents(new JumpBoostHandler(this), this);
+        pl.registerEvents(new SaturationHandler(this), this);
+        pl.registerEvents(new TeleportHandler(this), this);
 
         ConduitPowerHandler conduitHandler = new ConduitPowerHandler(this);
         pl.registerEvents(conduitHandler, this);

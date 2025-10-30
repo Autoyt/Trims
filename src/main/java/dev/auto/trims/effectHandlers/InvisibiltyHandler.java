@@ -55,8 +55,6 @@ public class InvisibiltyHandler implements IBaseEffectHandler, Listener, PacketL
         }
     }
 
-    // TODO Add walking particle disable
-
     @EventHandler
     public void onArmorEquip(PlayerArmorChangeEvent event) {
         handleEquip(event, defaultPattern);

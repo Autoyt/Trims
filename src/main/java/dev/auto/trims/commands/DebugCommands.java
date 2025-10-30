@@ -7,10 +7,13 @@ import dev.auto.trims.particles.GhostStepFX;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
+import org.checkerframework.checker.units.qual.A;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -53,7 +56,10 @@ public class DebugCommands implements TabExecutor {
 
             case "heal" -> {
                 Player p = (Player) sender;
-                p.setHealth(20);
+                AttributeInstance maxHealth = p.getAttribute(Attribute.MAX_HEALTH);
+                if (maxHealth != null) {
+                    p.setHealth(maxHealth.getValue());
+                }
                 p.setFoodLevel(20);
             }
 
@@ -92,7 +98,7 @@ public class DebugCommands implements TabExecutor {
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command,
                                                 @NotNull String label, @NotNull String[] args) {
         if (!sender.hasPermission("trims.debug")) return List.of();
-        if (args.length == 1) return List.of("spawn-ghost-block", "armor-profile", "nether", "explode");
+        if (args.length == 1) return List.of("spawn-ghost-block", "armor-profile", "nether", "explode", "heal", "rc");
 
         if (args.length == 2 && args[0].equalsIgnoreCase("min-fall-velocity"))
             return List.of("-0.08", "-0.10", "-0.06");
