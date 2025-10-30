@@ -143,38 +143,52 @@ public class AbsorptionListener implements IBaseEffectHandler, Listener, Runnabl
                     }
                 }
 
-                int time = countdown.getOrDefault(uid, 0) + 1;
-                if (time >= PERIOD) {
-                    countdown.put(uid, 0);
-                    double cap = instances * 10.0;
-                    double cur = p.getAbsorptionAmount();
-                    
-                    if (cur < cap) {
-                        p.setAbsorptionAmount(Math.min(cap, cur + 10.0));
+                double cap = instances * 10.0;
+                double maxHealth = p.getMaxHealth();
+                double currentTotal = p.getHealth() + p.getAbsorptionAmount();
+                double totalMax = maxHealth + cap;
+                boolean allowCharge = currentTotal < totalMax;
 
-                        Location loc = p.getLocation();
-                        Color color = Color.fromRGB(0xFBD716);
-                        Particle.DustOptions options = new Particle.DustOptions(color, 1.25f);
-                        loc.getWorld().spawnParticle(Particle.DUST, loc, 10, 0.3, 0.3, 0.3, 1.5, options);
+                BossBar bar = bossBars.get(uid);
 
-                        p.playSound(loc, Sound.BLOCK_AMETHYST_BLOCK_RESONATE, 1f, 1f);
+                if (allowCharge) {
+                    int time = countdown.getOrDefault(uid, 0) + 1;
+                    if (time >= PERIOD) {
+                        countdown.put(uid, 0);
+                        double cur = p.getAbsorptionAmount();
+
+                        if (cur < cap) {
+                            p.setAbsorptionAmount(Math.min(cap, cur + 10.0));
+
+                            Location loc = p.getLocation();
+                            Color color = Color.fromRGB(0xFBD716);
+                            Particle.DustOptions options = new Particle.DustOptions(color, 1.25f);
+                            loc.getWorld().spawnParticle(Particle.DUST, loc, 10, 0.3, 0.3, 0.3, 1.5, options);
+
+                            p.playSound(loc, Sound.BLOCK_AMETHYST_BLOCK_RESONATE, 1f, 1f);
+                        }
+
+                        if (bar != null) {
+                            bar.progress(0f);
+                            bar.name(Component.text("Charging 0%"));
+                            p.showBossBar(bar);
+                        }
+                    } else {
+                        countdown.put(uid, time);
+                        if (bar != null) {
+                            float progress = Math.min(1f, (float) time / (float) PERIOD);
+                            int percent = Math.min(100, Math.max(0, Math.round(progress * 100f)));
+                            bar.progress(progress);
+                            bar.name(Component.text("Charging " + percent + "%"));
+                            p.showBossBar(bar);
+                        }
                     }
-
-                    BossBar bar = bossBars.get(uid);
+                } else {
+                    // At full combined health (hearts + absorption), do not charge
+                    countdown.put(uid, 0);
                     if (bar != null) {
                         bar.progress(0f);
                         bar.name(Component.text("Charging 0%"));
-                        p.showBossBar(bar);
-                    }
-                } 
-                else {
-                    countdown.put(uid, time);
-                    BossBar bar = bossBars.get(uid);
-                    if (bar != null) {
-                        float progress = Math.min(1f, (float) time / (float) PERIOD);
-                        int percent = Math.min(100, Math.max(0, Math.round(progress * 100f)));
-                        bar.progress(progress);
-                        bar.name(Component.text("Charging " + percent + "%"));
                         p.showBossBar(bar);
                     }
                 }

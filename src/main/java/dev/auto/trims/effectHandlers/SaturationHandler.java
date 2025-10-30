@@ -13,7 +13,7 @@ import java.util.UUID;
 
 public class SaturationHandler implements IBaseEffectHandler, Listener, Runnable {
     private final Main instance;
-    private final TrimPattern defaultPattern = TrimPattern.SPIRE;
+    private final TrimPattern defaultPattern = TrimPattern.SNOUT;
     private final Map<UUID, Integer> cooldown = new HashMap<>();
 
     public SaturationHandler(Main instance) {

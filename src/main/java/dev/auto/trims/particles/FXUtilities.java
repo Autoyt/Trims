@@ -8,6 +8,7 @@ import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Vector;
 
 public class FXUtilities {
     public static void lv4Activation(Player p) {
@@ -38,6 +39,8 @@ public class FXUtilities {
         }.runTaskTimer(Main.getInstance(), 0L,1L);
     }
 
+
+
     public static CircleFX ConduitFX(Player p) {
         Color color = Color.fromARGB(204, 15, 166, 236);
         Particle.DustOptions options = new Particle.DustOptions(color, 0.75f);
@@ -55,4 +58,25 @@ public class FXUtilities {
         Particle.DustOptions options = new Particle.DustOptions(color, 2f);
         return new CircleFX(p).setParticle(Particle.DUST).setRadius(12).setPoints(122).setDustOptions(options).run();
     }
+
+    public static int speedToARGB(Vector vel, double slow, double fast, int alpha) {
+        double t = (vel.length() - slow) / Math.max(1e-9, fast - slow);
+        t = Math.max(0.0, Math.min(1.0, t));
+        t = t * t * (3 - 2 * t);
+        double r, g, b;
+        if (t < 0.5) {
+        double u = t * 2.0;
+        r = 255.0 * u; g = 255.0; b = 0.0;
+        } else {
+        double u = (t - 0.5) * 2.0;
+        r = 255.0; g = 255.0 * (1.0 - u); b = 0.0;
+        }
+        int R = (int)Math.round(r), G = (int)Math.round(g), B = (int)Math.round(b);
+        return ((alpha & 0xFF) << 24) | (R << 16) | (G << 8) | B;
+    }
+
+      private static double smoothstep(double a, double b, double x) {
+        double t = Math.max(0.0, Math.min(1.0, (x - a)/(b - a)));
+        return t * t * (3 - 2 * t);
+      }
 }

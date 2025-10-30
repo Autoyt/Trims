@@ -1,0 +1,119 @@
+[
+  {
+    "user": {
+      "type": "player",
+      "name": "ffnwy",
+      "uniqueId": "dd14d2a9-ebeb-4452-80ac-fb08e5d6bef2"
+    },
+    "time": 1761853765313,
+    "type": "Profiler",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/GtnYzX0twB"
+    }
+  },
+  {
+    "user": {
+      "type": "player",
+      "name": "ffnwy",
+      "uniqueId": "dd14d2a9-ebeb-4452-80ac-fb08e5d6bef2"
+    },
+    "time": 1761853412695,
+    "type": "Heap dump",
+    "data": {
+      "type": "file",
+      "value": "plugins\\spark\\heap-2025-10-30_15.43.30.hprof"
+    }
+  },
+  {
+    "user": {
+      "type": "player",
+      "name": "ffnwy",
+      "uniqueId": "dd14d2a9-ebeb-4452-80ac-fb08e5d6bef2"
+    },
+    "time": 1761853380513,
+    "type": "Profiler",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/hgVW3wzL44"
+    }
+  },
+  {
+    "user": {
+      "type": "player",
+      "name": "ffnwy",
+      "uniqueId": "dd14d2a9-ebeb-4452-80ac-fb08e5d6bef2"
+    },
+    "time": 1761853010067,
+    "type": "Profiler",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/4j5sCYJaSc"
+    }
+  },
+  {
+    "user": {
+      "type": "player",
+      "name": "ffnwy",
+      "uniqueId": "dd14d2a9-ebeb-4452-80ac-fb08e5d6bef2"
+    },
+    "time": 1761852792536,
+    "type": "Profiler",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/Rp5sWlISfJ"
+    }
+  },
+  {
+    "user": {
+      "type": "player",
+      "name": "ffnwy",
+      "uniqueId": "dd14d2a9-ebeb-4452-80ac-fb08e5d6bef2"
+    },
+    "time": 1761852740362,
+    "type": "Profiler (live)",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/TjoPbIwS5C"
+    }
+  },
+  {
+    "user": {
+      "type": "player",
+      "name": "ffnwy",
+      "uniqueId": "dd14d2a9-ebeb-4452-80ac-fb08e5d6bef2"
+    },
+    "time": 1761852474812,
+    "type": "Profiler (live)",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/TjFfmnzfus"
+    }
+  },
+  {
+    "user": {
+      "type": "player",
+      "name": "ffnwy",
+      "uniqueId": "dd14d2a9-ebeb-4452-80ac-fb08e5d6bef2"
+    },
+    "time": 1761852238804,
+    "type": "Profiler (live)",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/Fk5Sg9ueTn"
+    }
+  },
+  {
+    "user": {
+      "type": "player",
+      "name": "ffnwy",
+      "uniqueId": "dd14d2a9-ebeb-4452-80ac-fb08e5d6bef2"
+    },
+    "time": 1761850804458,
+    "type": "Profiler (live)",
+    "data": {
+      "type": "url",
+      "value": "https://spark.lucko.me/pIsuy0n62D"
+    }
+  }
+]
