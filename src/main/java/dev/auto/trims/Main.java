@@ -62,6 +62,8 @@ public final class Main extends JavaPlugin {
         pl.registerEvents(new SaturationHandler(this), this);
         pl.registerEvents(new TeleportHandler(this), this);
         pl.registerEvents(new ConduitPowerHandler(this), this);
+        pl.registerEvents(new StrengthHandler(this), this);
+        pl.registerEvents(new ResistanceHandler(this), this);
 
         InvisibiltyHandler invisibiltyHandler = new InvisibiltyHandler(this);
         pl.registerEvents(invisibiltyHandler, this);

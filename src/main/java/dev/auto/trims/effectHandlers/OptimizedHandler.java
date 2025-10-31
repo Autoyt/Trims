@@ -25,11 +25,11 @@ public class OptimizedHandler implements Listener {
         this.defaultPattern = pattern;
     }
 
-    private Integer getTrimCount(UUID uuid) {
+    protected int getTrimCount(UUID uuid) {
         return instancesOfTrim.computeIfAbsent(uuid, i -> updateTrimCache(uuid));
     }
 
-    private Integer updateTrimCache(UUID id) {
+    private int updateTrimCache(UUID id) {
         PlayerArmorSlots slots = TrimManager.getSlots(id);
         int count = slots.instancesOfTrim(defaultPattern);
 
@@ -38,13 +38,13 @@ public class OptimizedHandler implements Listener {
     }
 
     @EventHandler
-    private void onLeave(PlayerQuitEvent event) {
+    protected void onLeave(PlayerQuitEvent event) {
         UUID id = event.getPlayer().getUniqueId();
         instancesOfTrim.remove(id);
     }
 
     @EventHandler(ignoreCancelled = true)
-    private void handleEquip(PlayerArmorChangeEvent event) {
+    protected void onArmorChange(PlayerArmorChangeEvent event) {
         final Player player = event.getPlayer();
         final UUID uuid = player.getUniqueId();
         final ItemStack oldItem = event.getOldItem();

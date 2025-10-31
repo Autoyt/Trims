@@ -2,7 +2,8 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
-import dev.auto.trims.customEvents.BossBarChangeValueEvent;
+import dev.auto.trims.managers.EffectManager;
+import dev.auto.trims.managers.TrimManager;
 import lombok.Getter;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.bossbar.BossBar.Color;
@@ -16,25 +17,29 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.meta.trim.TrimPattern;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.*;
 
-public class ResistanceHandler implements Listener, IBaseEffectHandler {
+public class ResistanceHandler extends OptimizedHandler implements Listener, IBaseEffectHandler {
     private final Main instance;
-    private final TrimPattern pattern = TrimPattern.SILENCE;
 
+    // state
     @Getter
-    private final Set<UUID> activePlayers = new HashSet<>();
-    private final Map<UUID, BossBar> bars = new HashMap<>();
+    private final Set<UUID> lv4Players = new HashSet<>();
+    private final Map<UUID, BossBar> bossBars = new HashMap<>();
     private final Map<UUID, Float> charge = new HashMap<>();
 
+    // ctor / registration
     public ResistanceHandler(Main instance) {
+        super(TrimPattern.SILENCE);
         this.instance = instance;
         TrimManager.handlers.add(this);
-
         Bukkit.getScheduler().runTaskLater(instance, new ChargeTask(this), 1);
     }
 
+    // charge accessors
     private float getCharge(UUID id) {
         return charge.getOrDefault(id, 0f);
     }
@@ -43,31 +48,27 @@ public class ResistanceHandler implements Listener, IBaseEffectHandler {
         charge.put(id, Math.max(0f, Math.min(1f, v)));
     }
 
-    private void showBar(Player p) {
+    // bossbar
+    private void showBossBar(Player p) {
         UUID id = p.getUniqueId();
-        bars.computeIfAbsent(id, k ->
-            BossBar.bossBar(Component.text("Charging..."), getCharge(id), Color.YELLOW, Overlay.PROGRESS)
-        );
-        p.showBossBar(bars.get(id));
+        bossBars.computeIfAbsent(id, k -> BossBar.bossBar(Component.text("Charging..."), getCharge(id), Color.YELLOW, Overlay.PROGRESS));
+        p.showBossBar(bossBars.get(id));
     }
 
-    private void hideBar(Player p) {
+    private void hideBossBar(Player p) {
         UUID id = p.getUniqueId();
-        BossBar bar = bars.remove(id);
+        BossBar bar = bossBars.remove(id);
         if (bar != null) p.hideBossBar(bar);
         charge.remove(id);
     }
 
     private void updateBar(Player p, float prev, float next) {
         UUID id = p.getUniqueId();
-        BossBar bar = bars.get(id);
+        BossBar bar = bossBars.get(id);
         if (bar == null) return;
 
-        // Names
-        if (next >= 1f) bar.name(Component.text("Ready!"));
-        else bar.name(Component.text("Charging..."));
+        bar.name(next >= 1f ? Component.text("Ready!") : Component.text("Charging..."));
 
-        // Colors
         if (next <= 0.10f) bar.color(Color.WHITE);
         else if (next <= 0.25f) bar.color(Color.RED);
         else if (next <= 0.65f) bar.color(Color.YELLOW);
@@ -76,88 +77,77 @@ public class ResistanceHandler implements Listener, IBaseEffectHandler {
 
         bar.progress(next);
 
-        // Sound triggers
-        if (prev < 1f && next == 1f)
-            p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_CHIME, 1f, 1f);
-        else if (prev < 0.5f && next >= 0.5f)
-            p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_HAT, 0.8f, 1.6f);
+        if (prev < 1f && next == 1f) p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_CHIME, 1f, 1f);
+        else if (prev < 0.5f && next >= 0.5f) p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_HAT, 0.8f, 1.6f);
     }
 
+    // tick
     @Override
-    public void onTick() {
-        for (Player player : instance.getServer().getOnlinePlayers()) {
-            UUID id = player.getUniqueId();
-            int count = getTrimCount(id, pattern);
-
-            if (count >= 4) {
-                if (activePlayers.add(id)) {
-                    showBar(player);
-                }
-            } else {
-                if (activePlayers.remove(id)) {
-                    hideBar(player);
-                }
-            }
-        }
-    }
-
-    @EventHandler
-    public void onArmorChange(PlayerArmorChangeEvent event) {
-        Player p = event.getPlayer();
+    public void onlinePlayerTick(Player p) {
         UUID id = p.getUniqueId();
+        int instanceCount = getTrimCount(id);
+        if (instanceCount >= 4) {
+            if (lv4Players.add(id)) showBossBar(p);
+        }
+        else {
+            if (lv4Players.remove(id)) hideBossBar(p);
+        }
 
-        TrimManager.buildSlots(id);
-        int count = TrimManager.getSlots(id).instancesOfTrim(pattern);
-
-        if (count >= 4) {
-            if (activePlayers.add(id)) showBar(p);
-        } else {
-            if (activePlayers.remove(id)) hideBar(p);
+        if (instanceCount > 0) {
+            int amplifier = Math.min(instanceCount, 4) - 2;
+            EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.RESISTANCE, 3600, amplifier, false, false));
         }
     }
 
+    // events
     @EventHandler
-    public void onQuit(PlayerQuitEvent event) {
-        hideBar(event.getPlayer());
-        activePlayers.remove(event.getPlayer().getUniqueId());
+    @Override
+    public void onArmorChange(PlayerArmorChangeEvent e) {
+        super.onArmorChange(e);
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent e) {
+        hideBossBar(e.getPlayer());
+        lv4Players.remove(e.getPlayer().getUniqueId());
     }
 
     @EventHandler
     public void onDamaged(EntityDamageByEntityEvent event) {
         if (!(event.getEntity() instanceof Player p)) return;
         UUID id = p.getUniqueId();
-        if (!activePlayers.contains(id)) return;
+        if (!lv4Players.contains(id)) return;
 
         float s = getCharge(id);
         if (s < 1f) return;
 
-        //Reduce incoming damage by 50% (i.e., damage * 0.5)
-        double original = event.getDamage();
-        event.setDamage(original * 0.5);
+        event.setDamage(0);
 
-        float prev = s;
         setCharge(id, 0f);
-        updateBar(p, prev, 0f);
+        updateBar(p, s, 0f);
 
-        // Feedback
         p.playSound(p.getLocation(), Sound.ITEM_SHIELD_BLOCK, 1f, 0.8f);
     }
 
+    // task
     static class ChargeTask implements Runnable {
-        private final ResistanceHandler handler;
-        public ChargeTask(ResistanceHandler handler) { this.handler = handler; }
+        private final ResistanceHandler h;
+
+        public ChargeTask(ResistanceHandler h) {
+            this.h = h;
+        }
 
         @Override
         public void run() {
-            for (UUID id : handler.activePlayers) {
+            for (UUID id : h.lv4Players) {
                 Player p = Bukkit.getPlayer(id);
                 if (p == null || !p.isOnline()) continue;
 
-                float prev = handler.getCharge(id);
+                float prev = h.getCharge(id);
                 if (prev < 1f) {
                     float next = Math.min(1f, prev + (1f / 100f));
-                    handler.setCharge(id, next);
-                    handler.updateBar(p, prev, next);
+                    h.setCharge(id, next);
+                    h.updateBar(p, prev, next);
                 }
             }
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), this, 1);

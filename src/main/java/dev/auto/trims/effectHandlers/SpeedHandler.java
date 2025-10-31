@@ -98,7 +98,6 @@ public class SpeedHandler implements Listener, IBaseEffectHandler, MovementListe
 
             if (instanceCount > 0) {
                 int amplifier = Math.min(instanceCount, 4) - 1;
-                System.out.println(amplifier);
                 EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.SPEED, 3600, amplifier, false, false));
             }
         }
