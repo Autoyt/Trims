@@ -2,6 +2,8 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.managers.EffectManager;
+import dev.auto.trims.managers.TrimManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -26,7 +28,7 @@ public class DolphinsGraceHandler implements IBaseEffectHandler, Listener {
         int instanceCount = getTrimCount(id, defaultPattern);
 
         if (instanceCount > 0) {
-            TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.DOLPHINS_GRACE, 3600, 0, false, false));
+            EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.DOLPHINS_GRACE, 3600, 0, false, false));
         }
     }
 

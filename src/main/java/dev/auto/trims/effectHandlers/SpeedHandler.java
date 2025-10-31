@@ -2,6 +2,8 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.managers.TrimManager;
+import dev.auto.trims.managers.EffectManager;
 import dev.auto.trims.customEvents.BossBarChangeValueEvent;
 import dev.auto.trims.effectHandlers.heavyEvents.MovementListener;
 import lombok.Getter;
@@ -35,7 +37,7 @@ public class SpeedHandler implements Listener, IBaseEffectHandler, MovementListe
         this.instance = instance;
         TrimManager.handlers.add(this);
 
-        Bukkit.getScheduler().runTaskLater(instance, new EnergyRechargeTask(this), 1);
+        Bukkit.getScheduler().runTaskLater(instance, new EnergyRechargeTask(this), 5);
     }
 
     public Float getDashEnergy(UUID id) {
@@ -96,7 +98,8 @@ public class SpeedHandler implements Listener, IBaseEffectHandler, MovementListe
 
             if (instanceCount > 0) {
                 int amplifier = Math.min(instanceCount, 4) - 1;
-                TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.SPEED, 3600, amplifier, false, false));
+                System.out.println(amplifier);
+                EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.SPEED, 3600, amplifier, false, false));
             }
         }
     }
@@ -284,11 +287,9 @@ public class SpeedHandler implements Listener, IBaseEffectHandler, MovementListe
         }
 
         p.setVelocity(newVel);
-        // Whoosh sound scales with charge
-        float vol = 0.25f + 0.75f * s; // 0.25..1.0
-        float pitch = 1.0f + 0.4f * s; // 1.0..1.4
+        float vol = 0.25f + 0.75f * s;
+        float pitch = 1.0f + 0.4f * s;
         p.playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_FLAP, vol, pitch);
-        // Do not reset fall distance here; players should take fall damage by default after dashing
     }
 
     @Override
@@ -313,13 +314,13 @@ class EnergyRechargeTask implements Runnable {
                 Player player = instance.getServer().getPlayer(id);
                 if (player == null || !player.isOnline()) continue;
 
-                final Float energy = handler.getDashEnergy(id);
+                Float energy = handler.getDashEnergy(id);
                 if (energy >= 1.0f) continue;
 
-                Float addIncrement = 1.0f / 165f;
+                Float addIncrement = 5.0f / 165f;
                 Bukkit.getPluginManager().callEvent(new BossBarChangeValueEvent(id, addIncrement));
             }
         }
-        Bukkit.getScheduler().runTaskLater(instance, new EnergyRechargeTask(handler), 1);
+        Bukkit.getScheduler().runTaskLater(instance, new EnergyRechargeTask(handler), 5L);
     }
 }

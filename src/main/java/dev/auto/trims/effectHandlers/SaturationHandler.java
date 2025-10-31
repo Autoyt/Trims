@@ -2,6 +2,7 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.managers.TrimManager;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;

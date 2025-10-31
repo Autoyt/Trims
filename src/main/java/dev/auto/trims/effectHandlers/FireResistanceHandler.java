@@ -2,6 +2,8 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.managers.EffectManager;
+import dev.auto.trims.managers.TrimManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -28,7 +30,7 @@ public class FireResistanceHandler implements IBaseEffectHandler, Listener {
 
             if (instanceCount > 0) {
                 // Request via coordinator; it will add/refresh and handle removals when not desired
-                TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 3600, 0, false, false));
+                EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 3600, 0, false, false));
             }
 
         }

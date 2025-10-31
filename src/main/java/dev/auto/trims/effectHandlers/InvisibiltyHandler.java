@@ -11,7 +11,9 @@ import com.github.retrooper.packetevents.protocol.player.Equipment;
 import com.github.retrooper.packetevents.protocol.player.EquipmentSlot;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityEquipment;
 import dev.auto.trims.Main;
+import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.utils.ItemStackUtils;
+import dev.auto.trims.managers.EffectManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -50,7 +52,7 @@ public class InvisibiltyHandler implements IBaseEffectHandler, Listener, PacketL
             }
 
             if (instanceCount > 0) {
-                TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.INVISIBILITY, 3600, 0, false, false));
+                EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.INVISIBILITY, 3600, 0, false, false));
             }
         }
     }

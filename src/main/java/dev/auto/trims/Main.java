@@ -7,6 +7,7 @@ import dev.auto.trims.crafting.CraftEventListener;
 import dev.auto.trims.crafting.CraftUtils;
 import dev.auto.trims.effectHandlers.*;
 import dev.auto.trims.listeners.GameListeners;
+import dev.auto.trims.managers.TrimManager;
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import lombok.Getter;
 import org.bukkit.Bukkit;
@@ -14,6 +15,8 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.Objects;
 
@@ -22,6 +25,7 @@ public final class Main extends JavaPlugin {
     private static Main instance;
     @Getter
     private FileConfiguration config;
+    BukkitTask tickTask;
 
     @Override
     public void onLoad() {
@@ -57,14 +61,11 @@ public final class Main extends JavaPlugin {
         pl.registerEvents(new JumpBoostHandler(this), this);
         pl.registerEvents(new SaturationHandler(this), this);
         pl.registerEvents(new TeleportHandler(this), this);
+        pl.registerEvents(new ConduitPowerHandler(this), this);
 
-        ConduitPowerHandler conduitHandler = new ConduitPowerHandler(this);
-        pl.registerEvents(conduitHandler, this);
-        Bukkit.getScheduler().runTaskTimer(this, conduitHandler, 1, 1);
-
-        InvisibiltyHandler invisHandler = new InvisibiltyHandler(this);
-        pl.registerEvents(invisHandler, this);
-        PacketEvents.getAPI().getEventManager().registerListener(invisHandler, PacketListenerPriority.LOW);
+        InvisibiltyHandler invisibiltyHandler = new InvisibiltyHandler(this);
+        pl.registerEvents(invisibiltyHandler, this);
+        PacketEvents.getAPI().getEventManager().registerListener(invisibiltyHandler, PacketListenerPriority.LOW);
 
         getLogger().info("Trim listeners registered");
 
@@ -75,7 +76,7 @@ public final class Main extends JavaPlugin {
         CraftEventListener craftListener = new CraftEventListener(this);
         pl.registerEvents(craftListener, this);
 
-        TrimManager.start();
+        tickTask = TrimManager.start();
         for (Player p : getServer().getOnlinePlayers()) {
             getLogger().info("Building slots for " + p.getName());
             TrimManager.buildSlots(p.getUniqueId());
@@ -85,6 +86,7 @@ public final class Main extends JavaPlugin {
     @Override
     public void onDisable() {
         instance = null;
+        tickTask.cancel();
         PacketEvents.getAPI().terminate();
     }
 }

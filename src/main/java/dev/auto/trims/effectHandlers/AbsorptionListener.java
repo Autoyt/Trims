@@ -2,6 +2,7 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.particles.FXUtilities;
 import dev.auto.trims.particles.utils.CircleFX;
 import net.kyori.adventure.bossbar.BossBar;
@@ -115,6 +116,7 @@ public class AbsorptionListener implements IBaseEffectHandler, Listener, Runnabl
         }
 
     }
+
     @Override
     public void run() {
         List<Player> sources = new ArrayList<>(lv4Players.size());

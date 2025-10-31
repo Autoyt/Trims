@@ -2,6 +2,8 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.managers.TrimManager;
+import dev.auto.trims.managers.EffectManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -41,15 +43,15 @@ public class LevitationHandler implements IBaseEffectHandler, Listener {
         if (instanceCount > 0) {
             if (!sneakingPlayers.contains(id)) {
                 int amplifier = Math.min(instanceCount, 4) - 1;
-                TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.LEVITATION, 3600, amplifier, false, false));
+                EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.LEVITATION, 3600, amplifier, false, false));
             }
 
             else {
                 if (instanceCount < 4) {
                     int amplifier = Math.min(instanceCount, 4) - 1;
-                    TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.LEVITATION, 3600, amplifier, false, false));
+                    EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.LEVITATION, 3600, amplifier, false, false));
                 } else {
-                    TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.SLOW_FALLING, 3600, 0, false, false));
+                    EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.SLOW_FALLING, 3600, 0, false, false));
                 }
             }
 

@@ -2,7 +2,7 @@ package dev.auto.trims.commands;
 
 import dev.auto.trims.Main;
 import dev.auto.trims.effectHandlers.PlayerArmorSlots;
-import dev.auto.trims.effectHandlers.TrimManager;
+import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.particles.GhostStepFX;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;

@@ -2,6 +2,8 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.managers.EffectManager;
+import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.particles.FXUtilities;
 import dev.auto.trims.particles.utils.CircleFX;
 import org.bukkit.Location;
@@ -25,6 +27,8 @@ public class ConduitPowerHandler implements IBaseEffectHandler, Listener, Runnab
     public ConduitPowerHandler(Main instance) {
         this.instance = instance;
         TrimManager.handlers.add(this);
+
+        instance.getServer().getScheduler().runTaskTimer(instance, this, 1, 5);
     }
 
     @Override
@@ -47,10 +51,7 @@ public class ConduitPowerHandler implements IBaseEffectHandler, Listener, Runnab
         }
 
         if (instanceCount > 0) {
-            TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.CONDUIT_POWER, 3600, 0, false, false));
-        }
-        else {
-            TrimManager.clearEffect(id);
+            EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.CONDUIT_POWER, 3600, 0, false, false));
         }
     }
 

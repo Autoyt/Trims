@@ -2,6 +2,8 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.managers.EffectManager;
+import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.particles.FXUtilities;
 import dev.auto.trims.particles.utils.CircleFX;
 import org.bukkit.Location;
@@ -48,7 +50,7 @@ public class HeroOfTheVillagerHandler implements IBaseEffectHandler, Listener, R
         }
 
         if (instanceCount > 0) {
-            TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE, 3600, 0, false, false));
+            EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE, 3600, 0, false, false));
         }
     }
 

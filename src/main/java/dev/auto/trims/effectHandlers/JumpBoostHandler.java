@@ -2,6 +2,8 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.managers.TrimManager;
+import dev.auto.trims.managers.EffectManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -41,7 +43,7 @@ public class JumpBoostHandler implements IBaseEffectHandler, Listener {
 
         if (instanceCount > 0) {
             int amplifier = Math.min(instanceCount, 4) - 2;
-            TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.JUMP_BOOST, 3600, amplifier, false, false));
+            EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.JUMP_BOOST, 3600, amplifier, false, false));
         }
     }
 

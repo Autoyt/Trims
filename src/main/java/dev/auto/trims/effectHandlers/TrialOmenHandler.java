@@ -2,6 +2,8 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.managers.TrimManager;
+import dev.auto.trims.managers.EffectManager;
 import dev.auto.trims.utils.ItemStackUtils;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -47,7 +49,7 @@ public class TrialOmenHandler implements IBaseEffectHandler, Listener {
 
         if (instanceCount > 0) {
             int amplifier = Math.min(instanceCount, 4) - 1;
-            TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.TRIAL_OMEN, 3600, amplifier, false, false));
+            EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.TRIAL_OMEN, 3600, amplifier, false, false));
         }
     }
 

@@ -3,6 +3,8 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.managers.TrimManager;
+import dev.auto.trims.managers.EffectManager;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -85,7 +87,7 @@ public class NightVisionHandler implements Listener, IBaseEffectHandler {
             // Apply night vision potion if needed (any number of DUNE pieces)
             if (instanceCount > 0) {
                 // Request via coordinator; it will add/refresh and handle removals when not desired
-                TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.NIGHT_VISION, 3600, 0, false, false));
+                EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.NIGHT_VISION, 3600, 0, false, false));
             }
         }
     }

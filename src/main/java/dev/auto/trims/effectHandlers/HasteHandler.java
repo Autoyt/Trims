@@ -2,6 +2,8 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.managers.TrimManager;
+import dev.auto.trims.managers.EffectManager;
 import org.bukkit.*;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
@@ -54,7 +56,7 @@ public class HasteHandler implements IBaseEffectHandler, Listener, Runnable {
 
         if (instanceCount > 0) {
             int amplifier = Math.min(instanceCount, 4) - 1;
-            TrimManager.wantEffect(id, new PotionEffect(PotionEffectType.HASTE, 3600, amplifier, false, false));
+            EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.HASTE, 3600, amplifier, false, false));
         }
     }
 
