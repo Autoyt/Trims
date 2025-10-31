@@ -25,6 +25,7 @@ import java.util.*;
 
 public class StrengthHandler extends OptimizedHandler implements Listener, IBaseEffectHandler {
     private final Main instance;
+    private static final TrimPattern defaultPattern = TrimPattern.WARD;
 
     // state
     @Getter
@@ -34,7 +35,7 @@ public class StrengthHandler extends OptimizedHandler implements Listener, IBase
 
     // ctor / registration
     public StrengthHandler(Main instance) {
-        super(TrimPattern.WARD);
+        super(defaultPattern);
         this.instance = instance;
         TrimManager.handlers.add(this);
 

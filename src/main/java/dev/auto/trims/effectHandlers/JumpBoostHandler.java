@@ -2,29 +2,25 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
-import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.managers.EffectManager;
+import dev.auto.trims.managers.TrimManager;
+import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerSwapHandItemsEvent;
+import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 
-public class JumpBoostHandler implements IBaseEffectHandler, Listener {
+public class JumpBoostHandler extends OptimizedHandler implements IBaseEffectHandler, Listener {
     private final Main instance;
-    private final TrimPattern defaultPattern = TrimPattern.BOLT;
-    private final Set<UUID> lv4Players = new HashSet<>();
+    private static final TrimPattern defaultPattern = TrimPattern.BOLT;
 
     public JumpBoostHandler(Main instance) {
+        super(defaultPattern);
         this.instance = instance;
         TrimManager.handlers.add(this);
     }
@@ -32,14 +28,7 @@ public class JumpBoostHandler implements IBaseEffectHandler, Listener {
     @Override
     public void onlinePlayerTick(Player player) {
         UUID id = player.getUniqueId();
-        int instanceCount = getTrimCount(id, defaultPattern);
-
-        if (instanceCount >= 4) {
-            lv4Players.add(id);
-        }
-        else {
-            lv4Players.remove(id);
-        }
+        int instanceCount = getTrimCount(id);
 
         if (instanceCount > 0) {
             int amplifier = Math.min(instanceCount, 4) - 2;
@@ -48,20 +37,20 @@ public class JumpBoostHandler implements IBaseEffectHandler, Listener {
     }
 
     @EventHandler
-    public void onArmorEquip(PlayerArmorChangeEvent event) {
-        handleEquip(event, defaultPattern);
+    public void onArmorChange(PlayerArmorChangeEvent e) {
+        super.onArmorChange(e);
     }
 
     @EventHandler
-    public void onLeave(PlayerQuitEvent event) {
-        UUID id = event.getPlayer().getUniqueId();
-        lv4Players.remove(id);
+    public void onStunSmash(PlayerToggleSneakEvent event) {
+        Player player = event.getPlayer();
+        UUID id = player.getUniqueId();
+        int instanceCount = getTrimCount(id);
+        if (instanceCount <= 0) return;
+
+        GameMode gm = player.getGameMode();
+        if (gm == GameMode.CREATIVE || gm == GameMode.SPECTATOR) return;
+
+        // TODO finsish this tomorrow
     }
-
-    public void onSwap(PlayerSwapHandItemsEvent event) {}
-    public void onClickInIventory(InventoryClickEvent player) {}
-    public void onDrag(InventoryDragEvent event) {}
-
-    // TODO Rocket crossbow. Figure out angle of multishot and raycast then figure out if explosive or propulsion.
-    // TODO add visual indicator for which mode is selected.
 }

@@ -24,6 +24,7 @@ import java.util.*;
 
 public class ResistanceHandler extends OptimizedHandler implements Listener, IBaseEffectHandler {
     private final Main instance;
+    private static final TrimPattern defaultPattern = TrimPattern.SILENCE;
 
     // state
     @Getter
@@ -33,7 +34,7 @@ public class ResistanceHandler extends OptimizedHandler implements Listener, IBa
 
     // ctor / registration
     public ResistanceHandler(Main instance) {
-        super(TrimPattern.SILENCE);
+        super(defaultPattern);
         this.instance = instance;
         TrimManager.handlers.add(this);
         Bukkit.getScheduler().runTaskLater(instance, new ChargeTask(this), 1);

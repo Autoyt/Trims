@@ -6,8 +6,8 @@ server/world
 server/world_nether
 server/world_the_end
 server/logs
-server/server.jar
 server/plugins/spark
+server/.console_history
 
 *.hprof
 
