@@ -7,6 +7,9 @@ server/world_nether
 server/world_the_end
 server/logs
 server/server.jar
+server/plugins/spark
+
+*.hprof
 
 *.iml
 *.ipr
