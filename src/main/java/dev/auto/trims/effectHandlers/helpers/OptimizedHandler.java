@@ -1,6 +1,8 @@
-package dev.auto.trims.effectHandlers;
+package dev.auto.trims.effectHandlers.helpers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
+import dev.auto.trims.Main;
+import dev.auto.trims.effectHandlers.PlayerArmorSlots;
 import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.particles.FXUtilities;
 import org.bukkit.Location;
@@ -16,13 +18,37 @@ import org.bukkit.inventory.meta.trim.TrimPattern;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
-public class OptimizedHandler implements Listener {
+public class OptimizedHandler implements Listener, Runnable {
     private final Map<UUID, Integer> instancesOfTrim = new HashMap<>();
+    private final Map<UUID, StatusBar> bossBars = new HashMap<>();
     private final TrimPattern defaultPattern;
+    private Function<UUID, Boolean> statusBarActivation;
+    private BiConsumer<UUID, StatusBar> statusBarConsumer;
+    private int hideTicks;
 
     public OptimizedHandler(TrimPattern pattern) {
         this.defaultPattern = pattern;
+
+        Main.getInstance().getServer().getScheduler().runTaskTimer(Main.getInstance(), this, 1, 5);
+    }
+
+    protected void setActivationFunction(Function<UUID, Boolean> function) {
+        this.statusBarActivation = function;
+    }
+
+    protected void setBossBarConsumer(BiConsumer<UUID, StatusBar> consumer) {
+        this.statusBarConsumer = consumer;
+    }
+
+    protected void setHideCooldown(int ticks) {
+        this.hideTicks = ticks;
+    }
+
+    protected StatusBar getStatusBar(UUID uuid) {
+        return bossBars.get(uuid);
     }
 
     protected int getTrimCount(UUID uuid) {
@@ -40,6 +66,7 @@ public class OptimizedHandler implements Listener {
     @EventHandler
     protected void onLeave(PlayerQuitEvent event) {
         UUID id = event.getPlayer().getUniqueId();
+        bossBars.remove(id);
         instancesOfTrim.remove(id);
     }
 
@@ -89,5 +116,28 @@ public class OptimizedHandler implements Listener {
         }
 
         instancesOfTrim.put(uuid, afterCount);
+    }
+
+    @Override
+    public void run() {
+        if (statusBarActivation == null || statusBarConsumer == null) return;
+        if (instancesOfTrim.isEmpty()) return;
+
+        for (UUID id : instancesOfTrim.keySet()) {
+            boolean passed = statusBarActivation.apply(id);
+
+            if (passed) {
+                if (bossBars.containsKey(id)) continue;
+                StatusBar bar = new StatusBar(id);
+                bar.setConsumer(statusBarConsumer);
+                bar.setHideTicks(hideTicks);
+
+                bossBars.put(id, bar);
+            }
+
+            if (bossBars.containsKey(id) && !passed) {
+                bossBars.get(id).hide();
+            }
+        }
     }
 }

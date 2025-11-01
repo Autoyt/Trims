@@ -2,9 +2,9 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.effectHandlers.helpers.IBaseEffectHandler;
 import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.managers.EffectManager;
-import dev.auto.trims.utils.ItemStackUtils;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -13,7 +13,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.trim.TrimPattern;
@@ -41,7 +40,6 @@ public class TrialOmenHandler implements IBaseEffectHandler, Listener {
 
         if (instanceCount >= 4) {
             lv4Players.add(id);
-            ItemStackUtils.enforceMaceBan(player);
         }
         else {
             lv4Players.remove(id);
@@ -70,7 +68,6 @@ public class TrialOmenHandler implements IBaseEffectHandler, Listener {
             PotionEffect blindness = new PotionEffect(PotionEffectType.BLINDNESS, 30, 0, false, false);
             attacker.addPotionEffect(blindness);
             attacker.damage(6, victim);
-            ItemStackUtils.enforceMaceBan(attacker);
             event.setCancelled(true);
         }
     }
@@ -86,13 +83,5 @@ public class TrialOmenHandler implements IBaseEffectHandler, Listener {
     public void onArmorEquip(PlayerArmorChangeEvent event) {
         handleEquip(event, defaultPattern);
         int instanceCount = getTrimCount(event.getPlayer().getUniqueId(), defaultPattern);
-        if (instanceCount >= 4) {
-            ItemStackUtils.enforceMaceBan(event.getPlayer());
-        }
-    }
-
-    @EventHandler
-    public void onJoin(PlayerJoinEvent event) {
-        ItemStackUtils.enforceMaceBan(event.getPlayer());
     }
 }

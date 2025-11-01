@@ -2,6 +2,7 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.effectHandlers.helpers.IBaseEffectHandler;
 import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.managers.EffectManager;
 import org.bukkit.entity.Player;
@@ -19,7 +20,7 @@ import java.util.UUID;
 
 public class LevitationHandler implements IBaseEffectHandler, Listener {
     private final Main instance;
-    private final TrimPattern defaultPattern = TrimPattern.HOST;
+    private final TrimPattern defaultPattern = TrimPattern.DUNE;
     private final Set<UUID> lv4Players = new HashSet<>();
     private final Set<UUID> sneakingPlayers = new HashSet<>();
 

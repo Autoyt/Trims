@@ -2,6 +2,7 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.effectHandlers.helpers.IBaseEffectHandler;
 import dev.auto.trims.managers.EffectManager;
 import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.particles.FXUtilities;
@@ -50,6 +51,7 @@ public class HeroOfTheVillagerHandler implements IBaseEffectHandler, Listener, R
         }
 
         if (instanceCount > 0) {
+            int amplifier = Math.min(instanceCount, 4) - 1;
             EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE, 3600, 0, false, false));
         }
     }
@@ -85,11 +87,10 @@ public class HeroOfTheVillagerHandler implements IBaseEffectHandler, Listener, R
     }
 
     public void handleNearby(Player player) {
-        PotionEffect active = player.getPotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE);
-        if (active == null || active.getDuration() < 40) {
-            PotionEffect nearbyEffect = new PotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE, 3600, 0, false, false);
-            player.addPotionEffect(nearbyEffect);
-        }
+        UUID id = player.getUniqueId();
+        int instanceCount = getTrimCount(id, defaultPattern);
+        int amplifier = Math.min(instanceCount, 4) - 1;
+        EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE, 3600, amplifier, false, false));
     }
 
     @EventHandler

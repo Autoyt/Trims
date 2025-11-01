@@ -2,11 +2,13 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.effectHandlers.helpers.IBaseEffectHandler;
 import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.particles.FXUtilities;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -45,10 +47,9 @@ public class TeleportHandler implements IBaseEffectHandler, Listener, Runnable {
         int instanceCount = getTrimCount(id, defaultPattern);
 
         if (instanceCount > 0) {
-            // Ensure bossbar is visible when the player has the trim
             showBossBar(id);
-        } else {
-            // Hide bossbar when no trims, but keep state maps intact until player quits
+        }
+        else {
             BossBar bar = bossBars.get(id);
             if (bar != null) {
                 player.hideBossBar(bar);
@@ -170,7 +171,16 @@ public class TeleportHandler implements IBaseEffectHandler, Listener, Runnable {
 
         if (cooldownTicks > 0) return;
 
-        int cooldownValue = Math.max(2, 40 - (instanceCount - 1) * 10) * 20;
+        ConfigurationSection section = instance.getConfig().getConfigurationSection("trims.teleport-handler.timings");
+        if (section == null) throw new IllegalStateException("No teleport-handler.timings section in config");
+
+        int cooldownValue = switch (instanceCount) {
+            case 1 -> section.getInt("1") * 20;
+            case 2 -> section.getInt("2") * 20;
+            case 3 -> section.getInt("3") * 20;
+            case 4 -> section.getInt("4") * 20;
+            default -> 0;
+        };
 
         if (target instanceof Player targetPlayer) {
             if (!sneakingPlayers.contains(id)) return;

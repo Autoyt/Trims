@@ -1,7 +1,7 @@
 package dev.auto.trims.managers;
 
 import dev.auto.trims.Main;
-import dev.auto.trims.effectHandlers.IBaseEffectHandler;
+import dev.auto.trims.effectHandlers.helpers.IBaseEffectHandler;
 import dev.auto.trims.effectHandlers.PlayerArmorSlots;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -10,7 +10,6 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.inventory.meta.trim.TrimPattern;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.Nullable;
 

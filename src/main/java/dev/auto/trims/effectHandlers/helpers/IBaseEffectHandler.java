@@ -1,7 +1,8 @@
-package dev.auto.trims.effectHandlers;
+package dev.auto.trims.effectHandlers.helpers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.effectHandlers.PlayerArmorSlots;
 import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.particles.FXUtilities;
 import org.bukkit.Location;

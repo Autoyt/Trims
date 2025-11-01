@@ -1,0 +1,8 @@
+trims:
+  teleport-handler:
+    # In seconds
+    timings:
+      '1': 50
+      '2': 35
+      '3': 20
+      '4': 10

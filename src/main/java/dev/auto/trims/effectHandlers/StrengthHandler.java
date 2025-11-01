@@ -2,6 +2,8 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.effectHandlers.helpers.IBaseEffectHandler;
+import dev.auto.trims.effectHandlers.helpers.OptimizedHandler;
 import dev.auto.trims.managers.EffectManager;
 import dev.auto.trims.managers.TrimManager;
 import lombok.Getter;
@@ -98,7 +100,7 @@ public class StrengthHandler extends OptimizedHandler implements Listener, IBase
         }
 
         if (instanceCount > 0) {
-            int amplifier = Math.min(instanceCount, 4) - 2;
+            int amplifier = Math.min(instanceCount, 4) - 1;
             EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.STRENGTH, 3600, amplifier, false, false));
         }
     }

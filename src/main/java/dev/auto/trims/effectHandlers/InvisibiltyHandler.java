@@ -11,6 +11,8 @@ import com.github.retrooper.packetevents.protocol.player.Equipment;
 import com.github.retrooper.packetevents.protocol.player.EquipmentSlot;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityEquipment;
 import dev.auto.trims.Main;
+import dev.auto.trims.effectHandlers.helpers.IBaseEffectHandler;
+import dev.auto.trims.effectHandlers.helpers.OptimizedHandler;
 import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.utils.ItemStackUtils;
 import dev.auto.trims.managers.EffectManager;
@@ -26,25 +28,25 @@ import org.bukkit.potion.PotionEffectType;
 
 import java.util.*;
 
-public class InvisibiltyHandler implements IBaseEffectHandler, Listener, PacketListener {
+public class InvisibiltyHandler extends OptimizedHandler implements IBaseEffectHandler, Listener, PacketListener {
     private final Main instance;
-    private final TrimPattern defaultPattern = TrimPattern.WILD;
+    private final static TrimPattern defaultPattern = TrimPattern.WILD;
     private final Set<UUID> hiddenTargets = new HashSet<>();
     private final Set<UUID> lv4Players = new HashSet<>();
     private static final ItemStack air = ItemStack.builder().type(ItemTypes.AIR).amount(1).build();
 
     public InvisibiltyHandler(Main instance) {
+        super(defaultPattern);
         this.instance = instance;
         TrimManager.handlers.add(this);
     }
 
     @Override
-    public void onTick() {
-        for (Player player : instance.getServer().getOnlinePlayers()) {
-            UUID id = player.getUniqueId();
-            int instanceCount = getTrimCount(id, defaultPattern);
+    public void onlinePlayerTick(Player player) {
+        UUID id = player.getUniqueId();
+        int instanceCount = getTrimCount(id);
 
-            if (instanceCount >= 4) {
+        if (instanceCount >= 4) {
                 lv4Players.add(id);
             }
             else {
@@ -54,21 +56,22 @@ public class InvisibiltyHandler implements IBaseEffectHandler, Listener, PacketL
             if (instanceCount > 0) {
                 EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.INVISIBILITY, 3600, 0, false, false));
             }
-        }
     }
 
     @EventHandler
     public void onArmorEquip(PlayerArmorChangeEvent event) {
-        handleEquip(event, defaultPattern);
-        int instanceCount = getTrimCount(event.getPlayer().getUniqueId(), defaultPattern);
+        super.onArmorChange(event);
+
+        UUID id = event.getPlayer().getUniqueId();
+        int instanceCount = getTrimCount(id);
 
         if (instanceCount >= 4) {
-            hidePlayer(event.getPlayer().getUniqueId());
-            lv4Players.add(event.getPlayer().getUniqueId());
+            hidePlayer(id);
+            lv4Players.add(id);
         }
         else {
-            showPlayer(event.getPlayer().getUniqueId());
-            lv4Players.remove(event.getPlayer().getUniqueId());
+            showPlayer(id);
+            lv4Players.remove(id);
         }
     }
 
@@ -97,7 +100,7 @@ public class InvisibiltyHandler implements IBaseEffectHandler, Listener, PacketL
     public void onLeave(PlayerQuitEvent event) {
         UUID id = event.getPlayer().getUniqueId();
         hiddenTargets.remove(id);
-        lv4Players.remove(event.getPlayer().getUniqueId());
+        lv4Players.remove(id);
     }
 
     public void hidePlayer(UUID id) {

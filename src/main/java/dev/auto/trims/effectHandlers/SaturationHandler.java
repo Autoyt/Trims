@@ -2,6 +2,7 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.effectHandlers.helpers.IBaseEffectHandler;
 import dev.auto.trims.managers.TrimManager;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
@@ -31,7 +32,14 @@ public class SaturationHandler implements IBaseEffectHandler, Listener, Runnable
             int instanceCount = getTrimCount(id, defaultPattern);
             if (!(instanceCount > 0)) continue;
 
-            final int period = 20 * 5 * instanceCount;
+            int seconds = switch (instanceCount) {
+                case 4 -> 15;
+                case 3 -> 30;
+                case 2 -> 45;
+                default -> 60;
+            };
+
+            int period = seconds * 20;
 
             int ticks = cooldown.getOrDefault(id, 0);
             cooldown.put(id, ticks + 1);

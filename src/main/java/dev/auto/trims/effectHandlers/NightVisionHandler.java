@@ -1,10 +1,11 @@
 package dev.auto.trims.effectHandlers;
 
-
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
-import dev.auto.trims.managers.TrimManager;
+import dev.auto.trims.effectHandlers.helpers.IBaseEffectHandler;
+import dev.auto.trims.effectHandlers.helpers.OptimizedHandler;
 import dev.auto.trims.managers.EffectManager;
+import dev.auto.trims.managers.TrimManager;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -20,156 +21,151 @@ import org.bukkit.scoreboard.Team;
 
 import java.util.*;
 
-public class NightVisionHandler implements Listener, IBaseEffectHandler {
+public class NightVisionHandler extends OptimizedHandler implements Listener, IBaseEffectHandler {
     private final Main instance;
-    private final TrimPattern defaultPattern = TrimPattern.DUNE;
-    private final Set<UUID> lv4Players = new HashSet<>();
-    private final Map<UUID, Set<UUID>> glowingTargets = new HashMap<>();
-    
-    private final double HORIZ_SIGHT_DISTANCE = 32.0;
+    private static final TrimPattern defaultPattern = TrimPattern.HOST;
 
-    private Team playerGlowTeam;
-    private Team hideNametagTeam;
+    private final Set<UUID> lv4Viewers = new HashSet<>();
+    private final Map<UUID, Set<UUID>> perViewerTargets = new HashMap<>();
+    private final Map<UUID, Integer> glowRefCounts = new HashMap<>();
+
+    private static final double HORIZ_SIGHT_DISTANCE = 32.0;
+
+    private final Team glowTeam;
 
     public NightVisionHandler(Main instance) {
+        super(defaultPattern);
         this.instance = instance;
         TrimManager.handlers.add(this);
 
         Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
-        
-        playerGlowTeam = scoreboard.getTeam("playerGlow");
-        if (playerGlowTeam == null) {
-            playerGlowTeam = scoreboard.registerNewTeam("playerGlow");
-            playerGlowTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS);
-            playerGlowTeam.color(NamedTextColor.DARK_PURPLE);
+        Team team = scoreboard.getTeam("playerGlow");
+        if (team == null) {
+            team = scoreboard.registerNewTeam("playerGlow");
+            team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS);
+            team.color(NamedTextColor.DARK_PURPLE);
         }
+        this.glowTeam = team;
 
-        hideNametagTeam = scoreboard.getTeam("hideNametag");
-        if (hideNametagTeam == null) {
-            hideNametagTeam = scoreboard.registerNewTeam("hideNametag");
-            hideNametagTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.FOR_OTHER_TEAMS);
-        }
+        // Schedule periodic proximity processing separate from OptimizedHandler.run()
+        instance.getServer().getScheduler().runTaskTimer(instance, this::processGlowTick, 1L, 5L);
     }
 
     @Override
-    public void onTick() {
-        for (Player player : instance.getServer().getOnlinePlayers()) {
-            UUID id = player.getUniqueId();
-            int instanceCount = getTrimCount(id, defaultPattern);
+    public void onlinePlayerTick(Player player) {
+        UUID id = player.getUniqueId();
+        int instanceCount = getTrimCount(id);
 
-            // Maintain LV4 membership and per-tick behavior
-            if (instanceCount >= 4) {
-                lv4Players.add(id);
-                handleLV4(player);
-            } else {
-                // Player no longer has LV4 - clean up any glow/team state once
-                if (lv4Players.remove(id)) {
-                    hideNametagTeam.removeEntry(player.getName());
-
-                    // Turn off glow for all targets this viewer was tracking, but only if no other viewer still tracks them
-                    Set<UUID> targets = glowingTargets.remove(id);
-                    if (targets != null) {
-                        for (UUID targetId : targets) {
-                            boolean stillNeeded = glowingTargets.values().stream().anyMatch(set -> set.contains(targetId));
-                            if (!stillNeeded) {
-                                Player target = Bukkit.getPlayer(targetId);
-                                if (target != null) {
-                                    target.setGlowing(false);
-                                    playerGlowTeam.removeEntry(target.getName());
-                                }
-                            }
-                        }
+        if (instanceCount >= 4) {
+            lv4Viewers.add(id);
+        } else {
+            if (lv4Viewers.remove(id)) {
+                Set<UUID> prev = perViewerTargets.remove(id);
+                if (prev != null) {
+                    for (UUID targetId : prev) {
+                        decrementGlow(targetId);
                     }
                 }
             }
+        }
 
+        // Apply night vision for any number of DUNE pieces
+        if (instanceCount > 0) {
+            EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.NIGHT_VISION, 3600, 0, false, false));
+        }
+    }
 
-            // Apply night vision potion if needed (any number of DUNE pieces)
-            if (instanceCount > 0) {
-                // Request via coordinator; it will add/refresh and handle removals when not desired
-                EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.NIGHT_VISION, 3600, 0, false, false));
+    private void processGlowTick() {
+        if (lv4Viewers.isEmpty()) return;
+
+        for (UUID viewerId : new HashSet<>(lv4Viewers)) {
+            Player viewer = instance.getServer().getPlayer(viewerId);
+            if (viewer == null) {
+                // Viewer is offline, clean up
+                lv4Viewers.remove(viewerId);
+                Set<UUID> prev = perViewerTargets.remove(viewerId);
+                if (prev != null) prev.forEach(this::decrementGlow);
+                continue;
             }
+
+            double verticalRange = viewer.getWorld().getMaxHeight() - viewer.getWorld().getMinHeight();
+            Location viewerLoc = viewer.getLocation();
+
+            Set<UUID> previousTargets = perViewerTargets.computeIfAbsent(viewerId, k -> new HashSet<>());
+            Set<UUID> currentTargets = new HashSet<>();
+
+            Collection<Player> nearbyPlayers = viewer.getWorld().getNearbyPlayers(
+                    viewerLoc,
+                    HORIZ_SIGHT_DISTANCE,
+                    verticalRange,
+                    p -> !p.equals(viewer)
+            );
+
+            for (Player target : nearbyPlayers) {
+                UUID targetId = target.getUniqueId();
+                currentTargets.add(targetId);
+                if (!previousTargets.contains(targetId)) {
+                    incrementGlow(target);
+                }
+            }
+
+            // Remove glow for players who left this viewer's range
+            for (UUID targetId : previousTargets) {
+                if (!currentTargets.contains(targetId)) {
+                    decrementGlow(targetId);
+                }
+            }
+
+            perViewerTargets.put(viewerId, currentTargets);
+        }
+    }
+
+    private void incrementGlow(Player target) {
+        UUID targetId = target.getUniqueId();
+        int count = glowRefCounts.getOrDefault(targetId, 0) + 1;
+        glowRefCounts.put(targetId, count);
+        if (count == 1) {
+            target.setGlowing(true);
+            glowTeam.addEntry(target.getName());
+        }
+    }
+
+    private void decrementGlow(UUID targetId) {
+        Integer count = glowRefCounts.get(targetId);
+        if (count == null || count <= 0) return;
+        count -= 1;
+        if (count <= 0) {
+            glowRefCounts.remove(targetId);
+            Player target = Bukkit.getPlayer(targetId);
+            if (target != null) {
+                target.setGlowing(false);
+                glowTeam.removeEntry(target.getName());
+            }
+        } else {
+            glowRefCounts.put(targetId, count);
         }
     }
 
     @EventHandler
     public void onArmorEquip(PlayerArmorChangeEvent event) {
-        handleEquip(event, defaultPattern);
-    }
-
-    private void handleLV4(Player viewer) {
-        if (!lv4Players.contains(viewer.getUniqueId())) return;
-        
-        // Hide viewer's nametag using team
-        hideNametagTeam.addEntry(viewer.getName());
-
-        double verticalRange = viewer.getWorld().getMaxHeight() - viewer.getWorld().getMinHeight();
-        Location viewerLoc = viewer.getLocation();
-        
-        Set<UUID> previousTargets = glowingTargets.computeIfAbsent(viewer.getUniqueId(), k -> new HashSet<>());
-        Set<UUID> currentTargets = new HashSet<>();
-
-        // Find all players currently in range
-        Collection<Player> nearbyPlayers = viewer.getWorld().getNearbyPlayers(
-            viewerLoc, 
-            HORIZ_SIGHT_DISTANCE, 
-            verticalRange, 
-            p -> p != viewer
-        );
-
-        for (Player target : nearbyPlayers) {
-            UUID targetId = target.getUniqueId();
-            currentTargets.add(targetId);
-            
-            // If this is a new target, turn on glow
-            if (!previousTargets.contains(targetId)) {
-                target.setGlowing(true);
-                playerGlowTeam.addEntry(target.getName());
-            }
-        }
-
-        // Turn off glow for players who left range
-        for (UUID targetId : previousTargets) {
-            if (!currentTargets.contains(targetId)) {
-                Player target = Bukkit.getPlayer(targetId);
-                if (target != null) {
-                    target.setGlowing(false);
-                    playerGlowTeam.removeEntry(target.getName());
-                }
-            }
-        }
-
-        // Update tracking
-        glowingTargets.put(viewer.getUniqueId(), currentTargets);
+        onArmorChange(event);
     }
 
     @EventHandler
     public void onLeave(PlayerQuitEvent event) {
         UUID leaverId = event.getPlayer().getUniqueId();
 
-        // Remove viewer status and nametag
-        lv4Players.remove(leaverId);
-        hideNametagTeam.removeEntry(event.getPlayer().getName());
-
-        // Turn off glow for targets that were glowing only because of this viewer
-        Set<UUID> targets = glowingTargets.remove(leaverId);
-        if (targets != null) {
-            for (UUID targetId : targets) {
-                boolean stillNeeded = glowingTargets.values().stream().anyMatch(set -> set.contains(targetId));
-                if (!stillNeeded) {
-                    Player target = Bukkit.getPlayer(targetId);
-                    if (target != null) {
-                        target.setGlowing(false);
-                        playerGlowTeam.removeEntry(target.getName());
-                    }
+        // Remove viewer status
+        if (lv4Viewers.remove(leaverId)) {
+            Set<UUID> targets = perViewerTargets.remove(leaverId);
+            if (targets != null) {
+                for (UUID targetId : targets) {
+                    decrementGlow(targetId);
                 }
             }
         }
 
-        // If the leaver themselves were glowing (e.g., added as a target elsewhere), remove their entry
-        playerGlowTeam.removeEntry(event.getPlayer().getName());
-
-        // Optional: explicitly clear the glowing flag on the leaver
+        glowTeam.removeEntry(event.getPlayer().getName());
         event.getPlayer().setGlowing(false);
     }
 }

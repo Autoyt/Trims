@@ -2,13 +2,13 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.effectHandlers.helpers.IBaseEffectHandler;
+import dev.auto.trims.effectHandlers.helpers.OptimizedHandler;
 import dev.auto.trims.managers.EffectManager;
 import dev.auto.trims.managers.TrimManager;
-import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -39,18 +39,5 @@ public class JumpBoostHandler extends OptimizedHandler implements IBaseEffectHan
     @EventHandler
     public void onArmorChange(PlayerArmorChangeEvent e) {
         super.onArmorChange(e);
-    }
-
-    @EventHandler
-    public void onStunSmash(PlayerToggleSneakEvent event) {
-        Player player = event.getPlayer();
-        UUID id = player.getUniqueId();
-        int instanceCount = getTrimCount(id);
-        if (instanceCount <= 0) return;
-
-        GameMode gm = player.getGameMode();
-        if (gm == GameMode.CREATIVE || gm == GameMode.SPECTATOR) return;
-
-        // TODO finsish this tomorrow
     }
 }

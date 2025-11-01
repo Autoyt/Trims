@@ -2,6 +2,8 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.effectHandlers.helpers.IBaseEffectHandler;
+import dev.auto.trims.effectHandlers.helpers.OptimizedHandler;
 import dev.auto.trims.managers.EffectManager;
 import dev.auto.trims.managers.TrimManager;
 import lombok.Getter;
@@ -10,6 +12,7 @@ import net.kyori.adventure.bossbar.BossBar.Color;
 import net.kyori.adventure.bossbar.BossBar.Overlay;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
+import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -128,6 +131,9 @@ public class ResistanceHandler extends OptimizedHandler implements Listener, IBa
         updateBar(p, s, 0f);
 
         p.playSound(p.getLocation(), Sound.ITEM_SHIELD_BLOCK, 1f, 0.8f);
+        org.bukkit.Color color = org.bukkit.Color.fromARGB(0x20D620);
+        Particle.DustOptions options = new Particle.DustOptions(color, 2f);
+        p.getWorld().spawnParticle(Particle.DUST, p.getLocation(), 10, 0.3, 0.3, 0.3, 1.5, options);
     }
 
     // task

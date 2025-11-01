@@ -2,6 +2,7 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.effectHandlers.helpers.IBaseEffectHandler;
 import dev.auto.trims.managers.EffectManager;
 import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.particles.FXUtilities;
@@ -86,11 +87,8 @@ public class ConduitPowerHandler implements IBaseEffectHandler, Listener, Runnab
     }
 
     public void handleNearby(Player player) {
-        PotionEffect active = player.getPotionEffect(PotionEffectType.CONDUIT_POWER);
-        if (active == null || active.getDuration() < 40) {
-            PotionEffect nearbyEffect = new PotionEffect(PotionEffectType.CONDUIT_POWER, 3600, 0, false, false);
-            player.addPotionEffect(nearbyEffect);
-        }
+        UUID id = player.getUniqueId();
+        EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.CONDUIT_POWER, 3600, 0, false, false));
     }
 
     @EventHandler

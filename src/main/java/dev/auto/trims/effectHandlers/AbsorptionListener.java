@@ -2,6 +2,8 @@ package dev.auto.trims.effectHandlers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
+import dev.auto.trims.effectHandlers.helpers.IBaseEffectHandler;
+import dev.auto.trims.managers.EffectManager;
 import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.particles.FXUtilities;
 import dev.auto.trims.particles.utils.CircleFX;
@@ -227,7 +229,8 @@ public class AbsorptionListener implements IBaseEffectHandler, Listener, Runnabl
             if (near) {
                 PotionEffect active = p.getPotionEffect(PotionEffectType.REGENERATION);
                 if (active == null || active.getDuration() < 40 || active.getAmplifier() < 0) {
-                    p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 20 * 15, 0, false, false));
+                    UUID id = p.getUniqueId();
+                    EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.REGENERATION, 20 * 15, 0, false, false));
                 }
             }
         }

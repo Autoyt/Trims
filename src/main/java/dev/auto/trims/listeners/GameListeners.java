@@ -1,7 +1,7 @@
 package dev.auto.trims.listeners;
 
 import dev.auto.trims.Main;
-import dev.auto.trims.effectHandlers.IBaseEffectHandler;
+import dev.auto.trims.effectHandlers.helpers.IBaseEffectHandler;
 import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.effectHandlers.heavyEvents.MovementListener;
 import org.bukkit.Bukkit;

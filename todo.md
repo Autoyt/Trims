@@ -1,0 +1,11 @@
+- Add outside world border thingamabob
+- Switch HOTV and Luck for artificial fortune
+- if you get hit you fall in levitation
+- Add bossbar hider
+- add that region shii
+- add what hudson said about the absorption thingi
+- bug players glowing undfer dune effect not updating
+- change to want effect instead of seteffect condiot
+- Add to sat a bar 
+- Lev to dune night vis to dune
+- Portal to borderlands, ban echest/shulkers. No team killing
