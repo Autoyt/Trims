@@ -5,7 +5,4 @@
 - add that region shii
 - add what hudson said about the absorption thingi
 - bug players glowing undfer dune effect not updating
-- change to want effect instead of seteffect condiot
-- Add to sat a bar 
-- Lev to dune night vis to dune
 - Portal to borderlands, ban echest/shulkers. No team killing

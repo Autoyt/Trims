@@ -49,8 +49,8 @@ public class FXUtilities {
 
     public static CircleFX HeroOfTheVillagerFX(Player p) {
         Color color = Color.fromARGB(204, 15, 166, 45);
-        Particle.DustOptions options = new Particle.DustOptions(color, 0.75f);
-        return new CircleFX(p).setParticle(Particle.DUST).setRadius(4).setPoints(144).setDustOptions(options).run();
+        Particle.DustOptions options = new Particle.DustOptions(color, 1.25f);
+        return new CircleFX(p).setParticle(Particle.DUST).setRadius(15).setPoints(144).setDustOptions(options).run();
     }
 
     public static CircleFX AbsorptionFX(Player p) {

@@ -3,6 +3,7 @@ package dev.auto.trims.effectHandlers;
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
 import dev.auto.trims.effectHandlers.helpers.IBaseEffectHandler;
+import dev.auto.trims.effectHandlers.helpers.OptimizedHandler;
 import dev.auto.trims.managers.TrimManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -21,11 +22,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class SuicideVestHandler implements IBaseEffectHandler, Listener {
+public class SuicideVestHandler extends OptimizedHandler implements IBaseEffectHandler, Listener {
     private final Main instance;
-    private final TrimPattern defaultPattern = TrimPattern.SHAPER;
+    private static final TrimPattern defaultPattern = TrimPattern.SHAPER;
 
     public SuicideVestHandler(Main instance) {
+        super(defaultPattern);
         this.instance = instance;
         TrimManager.handlers.add(this);
     }
@@ -34,7 +36,7 @@ public class SuicideVestHandler implements IBaseEffectHandler, Listener {
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player player = event.getEntity();
         UUID id = player.getUniqueId();
-        int instanceCount = getTrimCount(id, defaultPattern);
+        int instanceCount = getTrimCount(id);
 
         if (!(instanceCount > 0)) return;
 
@@ -80,14 +82,14 @@ public class SuicideVestHandler implements IBaseEffectHandler, Listener {
 
     @EventHandler
     public void onArmorEquip(PlayerArmorChangeEvent event) {
-        handleEquip(event, defaultPattern);
+        super.onArmorChange(event);
     }
 
     @EventHandler
     public void onCreeperExplode(ExplosionPrimeEvent event) {
         if (!(event.getEntity() instanceof Creeper creeper)) return;
         for (Player player : creeper.getWorld().getNearbyPlayers(creeper.getLocation(), 10)) {
-            if (getTrimCount(player.getUniqueId(), defaultPattern) > 0) {
+            if (getTrimCount(player.getUniqueId()) > 0) {
                 event.setCancelled(true);
                 creeper.setAI(false);
                 return;

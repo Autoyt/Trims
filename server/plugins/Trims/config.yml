@@ -1,4 +1,6 @@
 trims:
+  haste-handler:
+    distance: 10
   teleport-handler:
     # In seconds
     timings:

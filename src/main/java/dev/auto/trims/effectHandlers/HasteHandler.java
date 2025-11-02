@@ -3,9 +3,11 @@ package dev.auto.trims.effectHandlers;
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
 import dev.auto.trims.effectHandlers.helpers.IBaseEffectHandler;
+import dev.auto.trims.effectHandlers.helpers.OptimizedHandler;
 import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.managers.EffectManager;
 import org.bukkit.*;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -27,17 +29,24 @@ import org.bukkit.util.Vector;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class HasteHandler implements IBaseEffectHandler, Listener, Runnable {
+public class HasteHandler extends OptimizedHandler implements IBaseEffectHandler, Listener, Runnable {
     private final Main instance;
-    private final TrimPattern defaultPattern = TrimPattern.FLOW;
+    private static final TrimPattern defaultPattern = TrimPattern.FLOW;
     private final NamespacedKey DROP_KEY;
+    private int magDistance;
     private final Set<UUID> lv4Players = new HashSet<>();
     private final Map<UUID, Long> fxCoolDown = new HashMap<>();
     private AtomicInteger fxCounter = new AtomicInteger(0);
 
     public HasteHandler(Main instance) {
+        super(defaultPattern);
         this.instance = instance;
         DROP_KEY = new NamespacedKey(instance, "drop");
+
+        ConfigurationSection config = instance.getConfig().getConfigurationSection("trims.haste-handler");
+        assert config != null;
+
+        magDistance = config.getInt("distance");
 
         TrimManager.handlers.add(this);
         Bukkit.getScheduler().runTaskTimer(instance, this, 1, 5);
@@ -46,7 +55,7 @@ public class HasteHandler implements IBaseEffectHandler, Listener, Runnable {
     @Override
     public void onlinePlayerTick(Player player) {
         UUID id = player.getUniqueId();
-        int instanceCount = getTrimCount(id, defaultPattern);
+        int instanceCount = getTrimCount(id);
 
         if (instanceCount >= 4) {
             lv4Players.add(id);
@@ -75,7 +84,7 @@ public class HasteHandler implements IBaseEffectHandler, Listener, Runnable {
 
         Collection<Player> nearbyPlayers = loc.getWorld().getNearbyPlayers(
                 loc,
-                10,
+                magDistance,
                 p -> lv4Players.contains(p.getUniqueId())
         );
 
@@ -179,7 +188,8 @@ public class HasteHandler implements IBaseEffectHandler, Listener, Runnable {
 
     @EventHandler
     public void onArmorEquip(PlayerArmorChangeEvent event) {
-        handleEquip(event, defaultPattern);
+        super.onArmorChange(event);
+
         UUID id = event.getPlayer().getUniqueId();
         int instanceCount = getTrimCount(id, defaultPattern);
 

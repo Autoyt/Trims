@@ -42,7 +42,6 @@ public final class Main extends JavaPlugin {
 
         pl.registerEvents(new GameListeners(), this);
         pl.registerEvents(new NightVisionHandler(this), this);
-//        pl.registerEvents(new testHandler(this),this);
         pl.registerEvents(new SpeedHandler(this), this);
         pl.registerEvents(new FireResistanceHandler(this), this);
         pl.registerEvents(new LuckHandler(this), this);

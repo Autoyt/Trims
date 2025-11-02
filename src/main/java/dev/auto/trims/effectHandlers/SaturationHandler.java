@@ -3,6 +3,7 @@ package dev.auto.trims.effectHandlers;
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
 import dev.auto.trims.effectHandlers.helpers.IBaseEffectHandler;
+import dev.auto.trims.effectHandlers.helpers.OptimizedHandler;
 import dev.auto.trims.managers.TrimManager;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
@@ -13,14 +14,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class SaturationHandler implements IBaseEffectHandler, Listener, Runnable {
+public class SaturationHandler extends OptimizedHandler implements IBaseEffectHandler, Listener, Runnable {
     private final Main instance;
-    private final TrimPattern defaultPattern = TrimPattern.SNOUT;
+    private static final TrimPattern defaultPattern = TrimPattern.SNOUT;
     private final Map<UUID, Integer> cooldown = new HashMap<>();
 
     public SaturationHandler(Main instance) {
+        super(defaultPattern);
         this.instance = instance;
         TrimManager.handlers.add(this);
+
 
         instance.getServer().getScheduler().runTaskTimer(instance, this, 1, 1);
     }
@@ -29,7 +32,7 @@ public class SaturationHandler implements IBaseEffectHandler, Listener, Runnable
     public void run() {
         for (Player player : Bukkit.getOnlinePlayers()) {
             UUID id = player.getUniqueId();
-            int instanceCount = getTrimCount(id, defaultPattern);
+            int instanceCount = getTrimCount(id);
             if (!(instanceCount > 0)) continue;
 
             int seconds = switch (instanceCount) {

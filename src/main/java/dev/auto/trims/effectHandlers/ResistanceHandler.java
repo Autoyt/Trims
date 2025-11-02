@@ -7,10 +7,7 @@ import dev.auto.trims.effectHandlers.helpers.OptimizedHandler;
 import dev.auto.trims.managers.EffectManager;
 import dev.auto.trims.managers.TrimManager;
 import lombok.Getter;
-import net.kyori.adventure.bossbar.BossBar;
-import net.kyori.adventure.bossbar.BossBar.Color;
-import net.kyori.adventure.bossbar.BossBar.Overlay;
-import net.kyori.adventure.text.Component;
+import dev.auto.trims.effectHandlers.helpers.StatusBar;
 import org.bukkit.Bukkit;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -29,61 +26,30 @@ public class ResistanceHandler extends OptimizedHandler implements Listener, IBa
     private final Main instance;
     private static final TrimPattern defaultPattern = TrimPattern.SILENCE;
 
-    // state
     @Getter
     private final Set<UUID> lv4Players = new HashSet<>();
-    private final Map<UUID, BossBar> bossBars = new HashMap<>();
-    private final Map<UUID, Float> charge = new HashMap<>();
 
-    // ctor / registration
     public ResistanceHandler(Main instance) {
         super(defaultPattern);
         this.instance = instance;
         TrimManager.handlers.add(this);
+
+        setActivationFunction(uuid -> getTrimCount(uuid) >= 4);
+        setHideCooldown(20 * 3);
+
+        setBossBarConsumer((uuid, statusBar) -> {
+            float status = statusBar.getProgress();
+            statusBar.setTitle(status >= 1f ? "Ready!" : "Charging...");
+            if (status <= 0.10f) statusBar.setColor(net.kyori.adventure.bossbar.BossBar.Color.WHITE);
+            else if (status <= 0.25f) statusBar.setColor(net.kyori.adventure.bossbar.BossBar.Color.RED);
+            else if (status <= 0.65f) statusBar.setColor(net.kyori.adventure.bossbar.BossBar.Color.YELLOW);
+            else if (status <= 0.90f) statusBar.setColor(net.kyori.adventure.bossbar.BossBar.Color.GREEN);
+            else statusBar.setColor(net.kyori.adventure.bossbar.BossBar.Color.BLUE);
+        });
+
         Bukkit.getScheduler().runTaskLater(instance, new ChargeTask(this), 1);
     }
 
-    // charge accessors
-    private float getCharge(UUID id) {
-        return charge.getOrDefault(id, 0f);
-    }
-
-    private void setCharge(UUID id, float v) {
-        charge.put(id, Math.max(0f, Math.min(1f, v)));
-    }
-
-    // bossbar
-    private void showBossBar(Player p) {
-        UUID id = p.getUniqueId();
-        bossBars.computeIfAbsent(id, k -> BossBar.bossBar(Component.text("Charging..."), getCharge(id), Color.YELLOW, Overlay.PROGRESS));
-        p.showBossBar(bossBars.get(id));
-    }
-
-    private void hideBossBar(Player p) {
-        UUID id = p.getUniqueId();
-        BossBar bar = bossBars.remove(id);
-        if (bar != null) p.hideBossBar(bar);
-        charge.remove(id);
-    }
-
-    private void updateBar(Player p, float prev, float next) {
-        UUID id = p.getUniqueId();
-        BossBar bar = bossBars.get(id);
-        if (bar == null) return;
-
-        bar.name(next >= 1f ? Component.text("Ready!") : Component.text("Charging..."));
-
-        if (next <= 0.10f) bar.color(Color.WHITE);
-        else if (next <= 0.25f) bar.color(Color.RED);
-        else if (next <= 0.65f) bar.color(Color.YELLOW);
-        else if (next <= 0.90f) bar.color(Color.GREEN);
-        else bar.color(Color.BLUE);
-
-        bar.progress(next);
-
-        if (prev < 1f && next == 1f) p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_CHIME, 1f, 1f);
-        else if (prev < 0.5f && next >= 0.5f) p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_HAT, 0.8f, 1.6f);
-    }
 
     // tick
     @Override
@@ -91,10 +57,9 @@ public class ResistanceHandler extends OptimizedHandler implements Listener, IBa
         UUID id = p.getUniqueId();
         int instanceCount = getTrimCount(id);
         if (instanceCount >= 4) {
-            if (lv4Players.add(id)) showBossBar(p);
-        }
-        else {
-            if (lv4Players.remove(id)) hideBossBar(p);
+            lv4Players.add(id);
+        } else {
+            lv4Players.remove(id);
         }
 
         if (instanceCount > 0) {
@@ -112,7 +77,6 @@ public class ResistanceHandler extends OptimizedHandler implements Listener, IBa
 
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
-        hideBossBar(e.getPlayer());
         lv4Players.remove(e.getPlayer().getUniqueId());
     }
 
@@ -122,13 +86,16 @@ public class ResistanceHandler extends OptimizedHandler implements Listener, IBa
         UUID id = p.getUniqueId();
         if (!lv4Players.contains(id)) return;
 
-        float s = getCharge(id);
+        StatusBar bar = getStatusBar(id);
+        if (bar == null) return;
+
+        float s = bar.getProgress();
         if (s < 1f) return;
 
         event.setDamage(0);
 
-        setCharge(id, 0f);
-        updateBar(p, s, 0f);
+        bar.setTitle("Charging...");
+        bar.setProgress(0f);
 
         p.playSound(p.getLocation(), Sound.ITEM_SHIELD_BLOCK, 1f, 0.8f);
         org.bukkit.Color color = org.bukkit.Color.fromARGB(0x20D620);
@@ -150,11 +117,19 @@ public class ResistanceHandler extends OptimizedHandler implements Listener, IBa
                 Player p = Bukkit.getPlayer(id);
                 if (p == null || !p.isOnline()) continue;
 
-                float prev = h.getCharge(id);
+                StatusBar bar = h.getStatusBar(id);
+                if (bar == null) continue;
+
+                float prev = bar.getProgress();
                 if (prev < 1f) {
                     float next = Math.min(1f, prev + (1f / 100f));
-                    h.setCharge(id, next);
-                    h.updateBar(p, prev, next);
+                    bar.setTitle(next >= 1f ? "Ready!" : "Charging...");
+                    bar.setProgress(next);
+                    if (prev < 1f && next == 1f) {
+                        p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_CHIME, 1f, 1f);
+                    } else if (prev < 0.5f && next >= 0.5f) {
+                        p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_HAT, 0.8f, 1.6f);
+                    }
                 }
             }
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), this, 1);

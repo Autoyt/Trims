@@ -3,112 +3,78 @@ package dev.auto.trims.effectHandlers;
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
 import dev.auto.trims.effectHandlers.helpers.IBaseEffectHandler;
+import dev.auto.trims.effectHandlers.helpers.OptimizedHandler;
 import dev.auto.trims.managers.EffectManager;
 import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.particles.FXUtilities;
 import dev.auto.trims.particles.utils.CircleFX;
-import org.bukkit.Location;
+import org.bukkit.*;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 
-public class HeroOfTheVillagerHandler implements IBaseEffectHandler, Listener, Runnable {
+public class HeroOfTheVillagerHandler extends OptimizedHandler implements IBaseEffectHandler, Listener {
     private final Main instance;
-    private final TrimPattern defaultPattern = TrimPattern.SENTRY;
-    private final Set<UUID> lv4Players = new HashSet<>();
-    private final Set<UUID> nearbyPlayers = new HashSet<>();
-    private final Map<UUID, CircleFX> fx = new HashMap<>();
+    private static final TrimPattern defaultPattern = TrimPattern.SENTRY;
 
     public HeroOfTheVillagerHandler(Main instance) {
+        super(defaultPattern);
         this.instance = instance;
+
         TrimManager.handlers.add(this);
     }
 
     @Override
     public void onlinePlayerTick(Player player) {
         UUID id = player.getUniqueId();
-        int instanceCount = getTrimCount(id, defaultPattern);
-
-        if (instanceCount >= 4) {
-            if (!fx.containsKey(id)) {
-                fx.put(id, FXUtilities.HeroOfTheVillagerFX(player));
-            }
-            lv4Players.add(id);
-        }
-        else {
-            CircleFX circleFX = fx.remove(id);
-            if (circleFX != null) {
-                circleFX.cancel();
-            }
-            lv4Players.remove(id);
-        }
+        int instanceCount = getTrimCount(id);
 
         if (instanceCount > 0) {
             int amplifier = Math.min(instanceCount, 4) - 1;
-            EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE, 3600, 0, false, false));
+            EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE, 3600, amplifier, false, false));
         }
     }
 
-    @Override
-    public void run() {
-        nearbyPlayers.clear();
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onDeath(EntityDeathEvent event) {
+        LivingEntity livingEntity = event.getEntity();
+        Player killer = livingEntity.getKiller();
+        if (killer == null) return;
 
-        for (UUID id : lv4Players) {
-            Player player = instance.getServer().getPlayer(id);
-            if (player == null) continue;
+        UUID id = killer.getUniqueId();
+        int instanceCount = getTrimCount(id);
+        if (!(instanceCount > 0)) return;
 
-            Location loc = player.getLocation();
+        int looting = killer.getInventory().getItemInMainHand().getEnchantmentLevel(Enchantment.LOOTING);
 
-            Collection<Player> nearby = loc.getWorld().getNearbyPlayers(
-                    loc,
-                    4,
-                    p -> !p.equals(player)
-            );
+        int base = ThreadLocalRandom.current().nextInt(0, 2 + looting);
+        int extra = killer.isOnGround() ? base : Math.min(base * 2, 3);
+        if (extra > 0) {
+            event.getDrops().add(new ItemStack(Material.EMERALD, extra));
 
-            for (Player p : nearby) {
-                nearbyPlayers.add(p.getUniqueId());
-            }
-
+            Location loc = livingEntity.getLocation().clone().add(0, 0.5, 0);
+                World world = loc.getWorld();
+                world.playSound(loc, Sound.ENTITY_ENDER_EYE_DEATH, 1f, 1f);
+                world.spawnParticle(Particle.HAPPY_VILLAGER, loc, 10, 0.3, 0.3, 0.3, 1);
         }
-
-        for (UUID id : nearbyPlayers) {
-            Player player = instance.getServer().getPlayer(id);
-            if (player == null) continue;
-
-            handleNearby(player);
-        }
-    }
-
-    public void handleNearby(Player player) {
-        UUID id = player.getUniqueId();
-        int instanceCount = getTrimCount(id, defaultPattern);
-        int amplifier = Math.min(instanceCount, 4) - 1;
-        EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.HERO_OF_THE_VILLAGE, 3600, amplifier, false, false));
-    }
-
-    @EventHandler
-    public void onLeave(PlayerQuitEvent event) {
-        final Player player = event.getPlayer();
-        final UUID uuid = player.getUniqueId();
-
-        CircleFX circleFX = fx.remove(uuid);
-        if (circleFX != null) {
-            circleFX.cancel();
-        }
-
-        lv4Players.remove(uuid);
     }
 
     @EventHandler
     public void onArmorEquip(PlayerArmorChangeEvent event) {
-        handleEquip(event, defaultPattern);
+        super.onArmorChange(event);
     }
 }
 

@@ -18,11 +18,12 @@ import org.bukkit.inventory.meta.trim.TrimPattern;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public class OptimizedHandler implements Listener, Runnable {
-    private final Map<UUID, Integer> instancesOfTrim = new HashMap<>();
+    private final Map<UUID, Integer> instancesOfTrim = new ConcurrentHashMap<>();
     private final Map<UUID, StatusBar> bossBars = new HashMap<>();
     private final TrimPattern defaultPattern;
     private Function<UUID, Boolean> statusBarActivation;
@@ -52,7 +53,12 @@ public class OptimizedHandler implements Listener, Runnable {
     }
 
     protected int getTrimCount(UUID uuid) {
-        return instancesOfTrim.computeIfAbsent(uuid, i -> updateTrimCache(uuid));
+        return instancesOfTrim.computeIfAbsent(uuid, this::computeTrimCount);
+    }
+
+    private int computeTrimCount(UUID id) {
+        PlayerArmorSlots s = TrimManager.getSlots(id);
+        return s.instancesOfTrim(defaultPattern);
     }
 
     private int updateTrimCache(UUID id) {

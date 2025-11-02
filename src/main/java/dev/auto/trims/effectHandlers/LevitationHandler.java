@@ -3,6 +3,7 @@ package dev.auto.trims.effectHandlers;
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import dev.auto.trims.Main;
 import dev.auto.trims.effectHandlers.helpers.IBaseEffectHandler;
+import dev.auto.trims.effectHandlers.helpers.OptimizedHandler;
 import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.managers.EffectManager;
 import org.bukkit.entity.Player;
@@ -18,13 +19,14 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-public class LevitationHandler implements IBaseEffectHandler, Listener {
+public class LevitationHandler extends OptimizedHandler implements IBaseEffectHandler, Listener {
     private final Main instance;
-    private final TrimPattern defaultPattern = TrimPattern.DUNE;
+    private static final TrimPattern defaultPattern = TrimPattern.DUNE;
     private final Set<UUID> lv4Players = new HashSet<>();
     private final Set<UUID> sneakingPlayers = new HashSet<>();
 
     public LevitationHandler(Main instance) {
+        super(defaultPattern);
         this.instance = instance;
         TrimManager.handlers.add(this);
     }
@@ -32,7 +34,7 @@ public class LevitationHandler implements IBaseEffectHandler, Listener {
     @Override
     public void onlinePlayerTick(Player player) {
         UUID id = player.getUniqueId();
-        int instanceCount = getTrimCount(id, defaultPattern);
+        int instanceCount = getTrimCount(id);
 
         if (instanceCount >= 4) {
             lv4Players.add(id);
@@ -79,7 +81,7 @@ public class LevitationHandler implements IBaseEffectHandler, Listener {
 
     @EventHandler
     public void onArmorEquip(PlayerArmorChangeEvent event) {
-        handleEquip(event, defaultPattern);
+        super.onArmorChange(event);
     }
 
     @EventHandler
