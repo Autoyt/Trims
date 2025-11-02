@@ -1,5 +1,6 @@
 package dev.auto.trims.effectHandlers.helpers;
 
+import com.google.common.util.concurrent.AtomicDouble;
 import dev.auto.trims.Main;
 import lombok.Setter;
 import net.kyori.adventure.bossbar.BossBar;
@@ -7,6 +8,7 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.UUID;
 import java.util.function.BiConsumer;
@@ -16,10 +18,13 @@ public class StatusBar {
     private boolean shown;
     private final UUID playerId;
     private final BossBar bossBar = BossBar.bossBar(Component.text("precompute"), 0f, BossBar.Color.WHITE, BossBar.Overlay.PROGRESS);
+
     @Setter
     private BiConsumer<UUID, StatusBar> consumer;
     @Setter
     private int hideTicks = 5;
+    private BukkitTask hideTask;
+    static final float EPS = 1e-6f;
 
     public StatusBar(UUID player) {
         this.playerId = player;
@@ -39,23 +44,21 @@ public class StatusBar {
         shown = true;
     }
 
-    public void setProgress(float preprogress) {
-        float postprogress = clamp(preprogress);
-        if (postprogress == this.progress) return;
+    public void setProgress(float value) {
+        float p = clamp(value);
+        if (Math.abs(p - this.progress) < EPS) return;
 
-        bossBar.progress(postprogress);
+        bossBar.progress(p);
         if (!shown) show();
 
-        if (postprogress >= 1f) {
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (getProgress() >= 1f) hide();
-                }
-            }.runTaskLater(Main.getInstance(), hideTicks);
-        }
+        if (hideTask != null) hideTask.cancel();
+        hideTask = new BukkitRunnable() {
+            @Override public void run() {
+                if (Math.abs(getProgress() - p) < EPS) hide();
+            }
+        }.runTaskLater(Main.getInstance(), hideTicks);
 
-        this.progress = postprogress;
+        this.progress = p;
         if (consumer != null) consumer.accept(playerId, this);
     }
 
