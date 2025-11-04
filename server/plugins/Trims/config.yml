@@ -1,12 +1,12 @@
 trims:
   world-options:
     s-o:
-      min: 5
-      max: 10
+      min: 100
+      max: 300
     
     o-e:
-      min: 5
-      max: 10
+      min: 100
+      max: 300
   haste-handler:
     distance: 10
   teleport-handler:

@@ -5,7 +5,8 @@ import dev.auto.trims.crafting.CraftUtils;
 import dev.auto.trims.effectHandlers.PlayerArmorSlots;
 import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.particles.GhostStepFX;
-import dev.auto.trims.world.BorderLand;
+import dev.auto.trims.world.BorderLandWorld;
+import dev.auto.trims.world.WorldManager;
 import dev.auto.trims.world.WorldObjective;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -18,11 +19,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
+import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class DebugCommands implements BasicCommand {
 
@@ -148,17 +149,88 @@ public class DebugCommands implements BasicCommand {
 
             case "new-world" -> {
                 if (!(sender instanceof Player p)) return;
-                new BorderLand(p.getUniqueId());
-                p.sendMessage("Running!");
+
+                Set<UUID> players = new HashSet<>();
+                for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+                    players.add(onlinePlayer.getUniqueId());
+                }
+                UUID worldId = BorderLandWorld.createWorld();
+                var bd = new BorderLandWorld(worldId, players, Structure.DESERT_PYRAMID);
+
+                Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+                    World world = Bukkit.getWorld(worldId.toString());
+                    if (world == null) {
+                        p.sendMessage("World not found!");
+                        return;
+                    }
+
+                    p.sendMessage(bd.worldObjectives.toString() + "Objective(s)");
+                    Location loc = bd.worldObjectives.get(Structure.DESERT_PYRAMID).spawn();
+                    if (loc == null) {
+                        p.sendMessage("Mansion objective not found!");
+                        return;
+                    }
+                    p.teleport(loc);
+                }, 20);
+
+                p.sendMessage("World is generating; you will be teleported when it finishes loading.");
+            }
+
+            case "unload-world" -> {
+                if (!(sender instanceof Player p)) return;
+                World world = p.getWorld();
+
+                BorderLandWorld bdl = WorldManager.getBorderWorld(world);
+                if (bdl == null) {
+                    sender.sendMessage("This world is not a BorderLand world or is not registered.");
+                    return;
+                }
+                bdl.unload();
+                p.sendMessage("Unloaded!");
             }
 
             case "new-objective" -> {
                 if (!(sender instanceof Player p)) return;
                 Location loc = p.getLocation();
 
-                WorldObjective obj = new WorldObjective(Structure.ANCIENT_CITY, loc, loc, loc);
-                BorderLand land = new BorderLand(p.getUniqueId());
-                land.createWayPoint(obj, args.length > 1 ? Integer.parseInt(args[1]) : 0);
+                WorldObjective obj = new WorldObjective(WorldManager.getIdFromStructure(Structure.ANCIENT_CITY), loc, loc, loc);
+                Set<UUID> onlinePlayerIds = Bukkit.getOnlinePlayers().stream()
+                        .map(Player::getUniqueId)
+                        .collect(Collectors.toSet());
+
+                if (args.length < 2) {
+                    sender.sendMessage("Usage: /trimsdebug new-objective <structure> [index]");
+                    return;
+                }
+
+                NamespacedKey key = NamespacedKey.fromString(args[1]);
+                if (key == null) {
+                    sender.sendMessage("Unknown structure name: " + args[1]);
+                    return;
+                }
+
+                Structure name = RegistryAccess.registryAccess().getRegistry(RegistryKey.STRUCTURE).get(key);
+                if (name == null) {
+                    sender.sendMessage("Unknown structure name: " + args[1]);
+                    return;
+                }
+
+                BorderLandWorld land = new BorderLandWorld(
+                        p.getWorld().getUID(),
+                        onlinePlayerIds,
+                        name
+                );
+
+                int index = 0;
+                if (args.length >= 3) {
+                    try {
+                        index = Integer.parseInt(args[2]);
+                    } catch (NumberFormatException ex) {
+                        sender.sendMessage("Invalid index. Use 0 or 1.");
+                        return;
+                    }
+                }
+                land.createWayPoint(obj, index);
             }
 
             case "armor-profile" -> {
@@ -238,6 +310,21 @@ public class DebugCommands implements BasicCommand {
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
                     .toList();
+        }
+
+        if (args.length == 2 && first.equalsIgnoreCase("new-world")) {
+            Registry<Structure> registry = Registry.STRUCTURE;
+
+            List<String> all = new ArrayList<>();
+            if (registry != null) {
+                for (Structure s : registry) {
+                    all.add(registry.getKeyOrThrow(s).toString());
+                }
+            }
+
+            List<String> completions = new ArrayList<>();
+            StringUtil.copyPartialMatches(args[1], all, completions);
+            return completions;
         }
 
         // /trimsdebug set <pattern> <material>

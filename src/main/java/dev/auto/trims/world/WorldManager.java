@@ -1,20 +1,28 @@
 package dev.auto.trims.world;
 
-import dev.auto.trims.Main;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
+import io.papermc.paper.event.player.PlayerClientLoadedWorldEvent;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.World;
-import org.bukkit.WorldCreator;
-import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.block.Block;
+import org.bukkit.entity.Item;
+import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.inventory.InventoryOpenEvent;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.generator.structure.Structure;
-import org.bukkit.util.StructureSearchResult;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class WorldManager implements Listener {
     private static final List<Structure> structures = List.of(
@@ -29,116 +37,96 @@ public class WorldManager implements Listener {
             Structure.PILLAGER_OUTPOST,
             Structure.SHIPWRECK
     );
+    public static Structure getStructureFromId(int id) {
+        return structures.get(id);
+    }
 
+    public static Integer getIdFromStructure(Structure structure) {
+        return structures.indexOf(structure);
+    }
 
-    private UUID createWorld() {
-        UUID worldID = UUID.randomUUID();
+    private static Map<World, BorderLandWorld> worlds = new HashMap<>();
+    public static void addWorld(World world, BorderLandWorld borderLandWorld) {
+        worlds.put(world, borderLandWorld);
+    }
 
-        if (Bukkit.getWorld(worldID) != null) {
-            throw new IllegalStateException("World already exists");
+    public static void removeWorld(World world) {
+        worlds.remove(world);
+    }
+
+    public static BorderLandWorld getBorderWorld(World world) {
+        return worlds.get(world);
+    }
+
+    // On actual load
+    public void onWorldChangeEvent(PlayerChangedWorldEvent event) {
+        // Add some locator bar logic here. World load resets stuff
+        // TODO fix particles
+        // TODO use ints for structure types, preload
+    }
+
+    // On visual load
+    public void onWorldLoadEvent(PlayerClientLoadedWorldEvent event) {}
+
+    @EventHandler
+    public void onInteract(PlayerInteractEvent event) {
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (event.getClickedBlock() == null) return;
+        if (!worlds.containsKey(event.getClickedBlock().getWorld())) return;
+
+        Block block = event.getClickedBlock();
+        World world = event.getClickedBlock().getWorld();
+        Player player = event.getPlayer();
+        if (block.getWorld() != world) return;
+
+        if (block.getType() == Material.ENDER_CHEST) {
+            event.setUseInteractedBlock(Event.Result.DENY);
+            event.setUseItemInHand(Event.Result.DENY);
+            event.setCancelled(true);
+
+            player.sendMessage(MiniMessage.miniMessage().deserialize("<red>You can't open an ender chest in this world!"));
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
         }
 
-        WorldCreator creator = new WorldCreator(worldID.toString());
-        creator.environment(World.Environment.NORMAL);
-        creator.seed(UUID.randomUUID().getLeastSignificantBits());
+        if (block.getType() == Material.SHULKER_BOX) {
+            event.setUseInteractedBlock(Event.Result.DENY);
+            event.setUseItemInHand(Event.Result.DENY);
+            event.setCancelled(true);
 
-        ConfigurationSection config = Main.getInstance().getConfig().getConfigurationSection("trims.world-options");
-        assert config != null;
-        ConfigurationSection spawnToObjective = config.getConfigurationSection("s-o");
-        assert spawnToObjective != null;
-        ConfigurationSection objectiveToExtraction = config.getConfigurationSection("o-e");
-        assert objectiveToExtraction != null;
+            player.sendMessage(MiniMessage.miniMessage().deserialize("<red>You can't open an Shulker box in this world!"));
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+        }
+    }
 
-        double spawnMin = spawnToObjective.getDouble("min");
-        double spawnMax = spawnToObjective.getDouble("max");
-        double exitMin = objectiveToExtraction.getDouble("min");
-        double exitMax = objectiveToExtraction.getDouble("max");
+    @EventHandler
+    public void onInventoryOpen(InventoryOpenEvent event) {
+        if (!worlds.containsKey(event.getPlayer().getWorld())) return;
 
-        World world = creator.createWorld();
-        assert world != null;
-
-        Location origin = new Location(world, 0, world.getMaxHeight(), 0);
-
-        ThreadLocalRandom rnd = ThreadLocalRandom.current();
-        Map<Structure, WorldObjective> worldObjectives = new HashMap<>();
-
-        for (Structure structure : structures) {
-            StructureSearchResult result = world.locateNearestStructure(origin, structure, 20000, false);
-            if (result == null) {
-                Main.getInstance().getLogger().warning("Cant find structure " + structure);
-                continue;
-            }
-
-            Location resultLoc = result.getLocation();
-            int baseX = resultLoc.getBlockX();
-            int baseZ = resultLoc.getBlockZ();
-
-            Location objective = null;
-            for (int y = world.getMaxHeight() - 1; y >= world.getMinHeight(); y--) {
-                var block = world.getBlockAt(baseX, y, baseZ);
-                if (!block.getType().isAir()) {
-                    objective = new Location(world, baseX + 0.5, y + 1, baseZ + 0.5);
-                    break;
-                }
-            }
-            if (objective == null) {
-                objective = world.getSpawnLocation(); // fallback
-            }
-
-            double angleSpawn = rnd.nextDouble(0, Math.PI * 2);
-            double radiusSpawn = rnd.nextDouble(spawnMin, spawnMax);
-
-            double spawnX = objective.getX() + Math.cos(angleSpawn) * radiusSpawn;
-            double spawnZ = objective.getZ() + Math.sin(angleSpawn) * radiusSpawn;
-
-            Location spawn = null;
-            int spawnBX = (int) Math.floor(spawnX);
-            int spawnBZ = (int) Math.floor(spawnZ);
-
-            for (int y = world.getMaxHeight() - 1; y >= world.getMinHeight(); y--) {
-                var block = world.getBlockAt(spawnBX, y, spawnBZ);
-                if (!block.getType().isAir()) {
-                    spawn = new Location(world, spawnBX + 0.5, y + 1, spawnBZ + 0.5);
-                    break;
-                }
-            }
-
-            if (spawn == null) {
-                spawn = objective.clone().add(0, 5, 0);
-            }
-
-            double angleExit = rnd.nextDouble(0, Math.PI * 2);
-            double radiusExit = rnd.nextDouble(exitMin, exitMax);
-
-            double exitX = objective.getX() + Math.cos(angleExit) * radiusExit;
-            double exitZ = objective.getZ() + Math.sin(angleExit) * radiusExit;
-
-            Location exit = null;
-            int exitBX = (int) Math.floor(exitX);
-            int exitBZ = (int) Math.floor(exitZ);
-
-            for (int y = world.getMaxHeight() - 1; y >= world.getMinHeight(); y--) {
-                var block = world.getBlockAt(exitBX, y, exitBZ);
-                if (!block.getType().isAir()) {
-                    exit = new Location(world, exitBX + 0.5, y + 1, exitBZ + 0.5);
-                    break;
-                }
-            }
-            if (exit == null) {
-                exit = objective.clone().add(0, 5, 0);
-            }
-
-            WorldObjective worldObjective = new WorldObjective(
-                    structure,
-                    spawn,
-                    objective,
-                    exit
-            );
-
-            worldObjectives.put(structure, worldObjective);
+        if (event.getInventory().getType() == InventoryType.ENDER_CHEST) {
+            event.getPlayer().sendMessage(MiniMessage.miniMessage().deserialize("<red>You can't open an ender chest in this world!"));
+            event.setCancelled(true);
         }
 
-        // TODO save world objectives
-        return worldID;
+        if (event.getInventory().getType() == InventoryType.SHULKER_BOX) {
+            event.getPlayer().sendMessage(MiniMessage.miniMessage().deserialize("<red>You can't open an Shulker box in this world!"));
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerAttack(EntityDamageByEntityEvent event) {
+        if (!worlds.containsKey(event.getEntity().getWorld())) return;
+        if (!(event.getEntity() instanceof Player damaged)) return;
+        if (!(event.getDamager() instanceof Player attacker)) return;
+
+        var players = worlds.get(damaged.getWorld()).getPlayers();
+        if (players.isEmpty()) return;
+
+        if (!players.contains(damaged.getUniqueId())) return;
+        if (!players.contains(attacker.getUniqueId())) return;
+
+        attacker.playSound(attacker.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+        damaged.getWorld().spawnParticle(Particle.ASH, damaged.getLocation(), 10);
+        event.setCancelled(true);
     }
 }

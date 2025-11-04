@@ -21,6 +21,7 @@ settings:
   shutdown-message: Server closed
   minimum-api: none
   use-map-color-cache: true
+  worlds-container: realms
 spawn-limits:
   monsters: 70
   animals: 10

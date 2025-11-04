@@ -8,9 +8,12 @@ import dev.auto.trims.crafting.CraftUtils;
 import dev.auto.trims.effectHandlers.*;
 import dev.auto.trims.listeners.GameListeners;
 import dev.auto.trims.managers.TrimManager;
+import dev.auto.trims.world.WorldManager;
+import dev.auto.trims.world.WorldObjective;
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import lombok.Getter;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -38,6 +41,7 @@ public final class Main extends JavaPlugin {
 
         // Util calls
         CraftUtils.removeCraftingRecipes();
+        ConfigurationSerialization.registerClass(WorldObjective.class, "WorldObjective");
 
         // Config
         configSave(false);
@@ -60,6 +64,8 @@ public final class Main extends JavaPlugin {
         pl.registerEvents(new ConduitPowerHandler(this), this);
         pl.registerEvents(new StrengthHandler(this), this);
         pl.registerEvents(new ResistanceHandler(this), this);
+
+        pl.registerEvents(new WorldManager(), this);
 
         InvisibiltyHandler invisibiltyHandler = new InvisibiltyHandler(this);
         pl.registerEvents(invisibiltyHandler, this);
