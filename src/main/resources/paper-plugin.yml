@@ -1,0 +1,24 @@
+name: trims
+version: 1.0.0
+main: dev.auto.trims.Main
+bootstrapper: dev.auto.trims.PluginBootDriver
+api-version: "1.21"
+authors: [ AutoYT ]
+prefix: TRIMS by AutoYT
+
+dependencies:
+  server:
+    Chunky:
+      load: BEFORE
+      required: true
+      join-classpath: true
+
+    packetevents:
+      load: BEFORE
+      required: true
+      join-classpath: true
+
+permissions:
+  trims.debug:
+    description: Allows you to use the debug command
+    default: op

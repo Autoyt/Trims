@@ -38,7 +38,7 @@ public class StrengthHandler extends OptimizedHandler implements Listener, IBase
 
         setActivationFunction(uuid -> getTrimCount(uuid) >= 4);
 
-        setHideCooldown(20 * 60 * 60); // 1 hour
+        setHideCooldown(20 * 3);
 
         setBossBarConsumer((uuid, statusBar) -> {
             float status = statusBar.getProgress();
@@ -72,7 +72,7 @@ public class StrengthHandler extends OptimizedHandler implements Listener, IBase
 
         // Apply baseline strength based on instances
         if (instanceCount > 0) {
-            int amplifier = Math.min(instanceCount, 4) - 1;
+            int amplifier = Math.min(instanceCount, 4) - 2;
             EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.STRENGTH, 3600, amplifier, false, false));
         }
     }
@@ -131,7 +131,8 @@ public class StrengthHandler extends OptimizedHandler implements Listener, IBase
 
                 float prev = bar.getProgress();
                 if (prev < 1f) {
-                    float next = Math.min(1f, prev + (5f / 100f));
+                    float increment = 1f / (45f * 20f);
+                    float next = Math.min(1f, prev + increment);
                     bar.setTitle(next >= 1f ? "Ready!" : "Charging...");
                     bar.setProgress(next);
 

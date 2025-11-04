@@ -122,7 +122,8 @@ public class ResistanceHandler extends OptimizedHandler implements Listener, IBa
 
                 float prev = bar.getProgress();
                 if (prev < 1f) {
-                    float next = Math.min(1f, prev + (1f / 100f));
+                    float increment = 1f / (45f * 20f);
+                    float next = Math.min(1f, prev + increment);
                     bar.setTitle(next >= 1f ? "Ready!" : "Charging...");
                     bar.setProgress(next);
                     if (prev < 1f && next == 1f) {

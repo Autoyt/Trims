@@ -1,4 +1,13 @@
 trims:
+  world-options:
+    s-o:
+      min: 5
+      max: 10
+
+    o-e:
+      min: 5
+      max: 10
+
   teleport-handler:
     # In seconds
     timings:

@@ -6,9 +6,12 @@ import dev.auto.trims.effectHandlers.helpers.IBaseEffectHandler;
 import dev.auto.trims.effectHandlers.helpers.OptimizedHandler;
 import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.managers.EffectManager;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.meta.trim.TrimPattern;
@@ -24,6 +27,7 @@ public class LevitationHandler extends OptimizedHandler implements IBaseEffectHa
     private static final TrimPattern defaultPattern = TrimPattern.DUNE;
     private final Set<UUID> lv4Players = new HashSet<>();
     private final Set<UUID> sneakingPlayers = new HashSet<>();
+    private final Set<UUID> onCooldown = new HashSet<>();
 
     public LevitationHandler(Main instance) {
         super(defaultPattern);
@@ -43,7 +47,7 @@ public class LevitationHandler extends OptimizedHandler implements IBaseEffectHa
             lv4Players.remove(id);
         }
 
-        if (instanceCount > 0) {
+        if (instanceCount > 0 && !onCooldown.contains(id)) {
             if (!sneakingPlayers.contains(id)) {
                 int amplifier = Math.min(instanceCount, 4) - 1;
                 EffectManager.wantEffect(id, new PotionEffect(PotionEffectType.LEVITATION, 3600, amplifier, false, false));
@@ -80,6 +84,22 @@ public class LevitationHandler extends OptimizedHandler implements IBaseEffectHa
     }
 
     @EventHandler
+    public void onProjectileHitEvent(ProjectileHitEvent event) {
+        if (!(event.getHitEntity() instanceof Player player)) return;
+        UUID id = player.getUniqueId();
+        int instanceCount = getTrimCount(id);
+
+        if (instanceCount > 0) {
+            if (onCooldown.contains(id)) return;
+            onCooldown.add(id);
+            instance.getServer().getScheduler().runTaskLater(instance, () -> onCooldown.remove(id), 80);
+
+            player.getWorld().spawnParticle(Particle.ASH, player.getLocation(), 10);
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+        }
+    }
+
+    @EventHandler
     public void onArmorEquip(PlayerArmorChangeEvent event) {
         super.onArmorChange(event);
     }
@@ -91,5 +111,6 @@ public class LevitationHandler extends OptimizedHandler implements IBaseEffectHa
 
         lv4Players.remove(uuid);
         sneakingPlayers.remove(uuid);
+        onCooldown.remove(uuid);
     }
 }

@@ -10,16 +10,18 @@ import dev.auto.trims.listeners.GameListeners;
 import dev.auto.trims.managers.TrimManager;
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import lombok.Getter;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
-
-import java.util.Objects;
+import org.popcraft.chunky.api.ChunkyAPI;
 
 public final class Main extends JavaPlugin {
     @Getter
     private static Main instance;
+    @Getter
+    private static ChunkyAPI chunky;
     BukkitTask tickTask;
 
     @Override
@@ -42,8 +44,7 @@ public final class Main extends JavaPlugin {
 
         pl.registerEvents(new GameListeners(), this);
         pl.registerEvents(new NightVisionHandler(this), this);
-//        pl.registerEvents(new SpeedHandler(this), this);
-        pl.registerEvents(new SpeedHandler2(this), this);
+        pl.registerEvents(new SpeedHandler(this), this);
         pl.registerEvents(new FireResistanceHandler(this), this);
         pl.registerEvents(new LuckHandler(this), this);
         pl.registerEvents(new LevitationHandler(this), this);
@@ -66,9 +67,7 @@ public final class Main extends JavaPlugin {
 
         getLogger().info("Trim listeners registered");
 
-        DebugCommands debug = new DebugCommands(this);
-        Objects.requireNonNull(getCommand("debug")).setExecutor(debug);
-        Objects.requireNonNull(getCommand("debug")).setTabCompleter(debug);
+        registerCommand("debug", new DebugCommands(this));
 
         CraftEventListener craftListener = new CraftEventListener(this);
         pl.registerEvents(craftListener, this);
@@ -78,12 +77,24 @@ public final class Main extends JavaPlugin {
             getLogger().info("Building slots for " + p.getName());
             TrimManager.buildSlots(p.getUniqueId());
         }
+
+        try {
+            chunky = Bukkit.getServer().getServicesManager().load(ChunkyAPI.class);
+        }
+        catch (Exception e) {
+            getLogger().warning("Exception thrown whilst loading chunky API");
+        }
     }
 
     @Override
     public void onDisable() {
         instance = null;
-        tickTask.cancel();
+
+        if (tickTask != null) {
+            tickTask.cancel();
+            tickTask = null;
+        }
+
         PacketEvents.getAPI().terminate();
     }
 

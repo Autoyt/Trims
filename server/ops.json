@@ -12,6 +12,12 @@
     "bypassesPlayerLimit": false
   },
   {
+    "uuid": "9c127115-6c48-4016-acf1-4dedcfb7572d",
+    "name": "Arcturus1239",
+    "level": 4,
+    "bypassesPlayerLimit": false
+  },
+  {
     "uuid": "4bf7b83c-cad0-43c3-a8d9-3c087f329179",
     "name": "cmdk",
     "level": 4,
@@ -26,6 +32,12 @@
   {
     "uuid": "a1c3e5d7-6c50-458e-8928-f077e589431c",
     "name": "AutoYT",
+    "level": 4,
+    "bypassesPlayerLimit": false
+  },
+  {
+    "uuid": "e64c7d38-f8f0-490e-8781-8067a2796ea9",
+    "name": "TheMithrandir",
     "level": 4,
     "bypassesPlayerLimit": false
   },
