@@ -23,6 +23,8 @@ public class StatusBar {
     private BiConsumer<UUID, StatusBar> consumer;
     @Setter
     private int hideTicks = 5;
+    @Setter
+    private boolean shouldHide = true;
     private BukkitTask hideTask;
     static final float EPS = 1e-6f;
 
@@ -54,6 +56,7 @@ public class StatusBar {
         if (hideTask != null) hideTask.cancel();
         hideTask = new BukkitRunnable() {
             @Override public void run() {
+                if (!shouldHide) return;
                 if (Math.abs(getProgress() - p) < EPS) hide();
             }
         }.runTaskLater(Main.getInstance(), hideTicks);

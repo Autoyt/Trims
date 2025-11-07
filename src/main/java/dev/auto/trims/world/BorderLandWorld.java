@@ -2,9 +2,11 @@ package dev.auto.trims.world;
 
 import dev.auto.trims.Main;
 import dev.auto.trims.customEvents.BorderLandsOnLoadEvent;
-import io.papermc.paper.registry.RegistryAccess;
-import io.papermc.paper.registry.RegistryKey;
+import dev.auto.trims.effectHandlers.helpers.StatusBar;
+import dev.auto.trims.utils.WaypointUtils;
 import lombok.Getter;
+import lombok.Setter;
+import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -14,23 +16,39 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.generator.structure.Structure;
-import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.StructureSearchResult;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class BorderLandWorld {
+    private static int readMeltdownTicks() {
+        int value = Main.getInstance().getConfig().getInt("trims.world-options.duration.meltdown", 6000);
+        if (value <= 0) {
+            Main.getInstance().getLogger().warning("Invalid 'trims.world-options.duration.meltdown' (" + value + ") — falling back to 6000 ticks (5 minutes)");
+            return 6000;
+        }
+        return value;
+    }
     public final Map<Structure, WorldObjective> worldObjectives = new HashMap<>();
-    private final Map<UUID, PlayerInventory> inventories = new HashMap<>();
     @Getter
     public final Set<UUID> players;
+    public final Map<UUID, StatusBar> statuses = new HashMap<>();
+    @Setter
+    private Player leader;
     private ArmorStand waypoint;
     private final UUID worldID;
     private World world;
     private final Structure structure;
+    private BukkitTask waypointTask;
+    private BukkitTask countdownTask;
+    private final int ticksUntilMeltdown = readMeltdownTicks();
+
+    @Setter
+    private int elapsedTicks = 0;
 
     public static final List<Structure> structures = List.of(
             Structure.DESERT_PYRAMID,
@@ -55,6 +73,7 @@ public class BorderLandWorld {
             Main.getInstance().getLogger().warning("World not found for world ID " + worldID);
         }
 
+        // ticksUntilMeltdown is validated via readMeltdownTicks() with a safe fallback
         load();
     }
 
@@ -97,7 +116,31 @@ public class BorderLandWorld {
 
             AttributeInstance waypointRange = player.getAttribute(Attribute.WAYPOINT_RECEIVE_RANGE);
             if (waypointRange != null) waypointRange.setBaseValue(600000);
+
+            StatusBar bar = new StatusBar(id);
+            bar.setConsumer((uuid, statusBar) -> {
+                if (elapsedTicks >= ticksUntilMeltdown) {
+                    statusBar.setColor(BossBar.Color.RED);
+                    statusBar.setTitle("Meltdown in progress");
+                    return;
+                }
+                statusBar.setColor(BossBar.Color.GREEN);
+                int remainingTicks = Math.max(0, ticksUntilMeltdown - elapsedTicks);
+                int minutes = (int) Math.ceil(remainingTicks / 1200.0);
+
+                statusBar.setTitle("%min% min to meltdown".replace("%min%", String.valueOf(minutes)));
+            });
+
+            bar.setShouldHide(false);
+            float initialProgress = Math.min(1f, Math.max(0f, elapsedTicks / (float) ticksUntilMeltdown));
+            bar.setProgress(initialProgress);
+
+            statuses.put(id, bar);
         }
+
+        // Waypoint task
+        waypointTask = createWaypointTask();
+        countdownTask = createCountdownTask();
 
         Bukkit.getPluginManager().callEvent(new BorderLandsOnLoadEvent(worldID));
     }
@@ -109,20 +152,80 @@ public class BorderLandWorld {
             if (player == null) continue;
 
             Location spawn = player.getRespawnLocation();
-            if (spawn == null && world != null) spawn = world.getSpawnLocation();
-
-            if (spawn != null) {
-                player.teleport(spawn);
-            }
+            if (spawn == null || spawn.getWorld() == world) spawn = Objects.requireNonNull(Bukkit.getWorld("world")).getSpawnLocation();
+            player.teleport(spawn);
 
             player.sendMessage(MiniMessage.miniMessage().deserialize(
                     "<red>We likely encountered an error for the world: %worldid% sending you home safely. Report to admins!"
                             .replace("%worldid%", worldID.toString())
             ));
+
+            WaypointUtils.RemoveWaypoint(player);
         }
 
-        inventories.clear();
+        if (waypointTask != null) waypointTask.cancel();
+        if (countdownTask != null) countdownTask.cancel();
+
+        for (UUID sid : new HashSet<>(statuses.keySet())) {
+            StatusBar bar = statuses.remove(sid);
+            if (bar != null) bar.hide();
+        }
         WorldManager.removeWorld(world);
+    }
+
+    private BukkitTask createCountdownTask() {
+        return new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (players.isEmpty()) return;
+
+                final int before = elapsedTicks;
+                elapsedTicks += 5;
+                if (elapsedTicks > ticksUntilMeltdown) elapsedTicks = ticksUntilMeltdown;
+
+                for (UUID id : players) {
+                    Player player = Bukkit.getPlayer(id);
+                    if (player == null) continue;
+                    if (player.getWorld() != world) continue;
+
+                    StatusBar bar = statuses.get(id);
+                    if (bar == null) continue;
+                    float progress = Math.min(1f, Math.max(0f, elapsedTicks / (float) ticksUntilMeltdown));
+                    bar.setProgress(progress);
+                }
+
+                if (elapsedTicks >= ticksUntilMeltdown && before < ticksUntilMeltdown) {
+                    this.cancel();
+                    // todo add meltdown logic
+                }
+            }
+        }.runTaskTimer(Main.getInstance(), 0, 5);
+    }
+
+    private BukkitTask createWaypointTask() {
+        return new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (UUID id : players) {
+                    Player player = Bukkit.getPlayer(id);
+                    if (player == null) continue;
+
+                    if (player == leader) {
+                        WaypointUtils.SetWaypoint(player, "#a11818");
+                        continue;
+                    }
+
+                    WaypointUtils.SetWaypoint(player, "#9c5021");
+                }
+            }
+        }.runTaskLater(Main.getInstance(), 20);
+    }
+
+    public void warpPlayer(Player player) {
+        if (worldObjectives.isEmpty()) throw new IllegalStateException("World Objectives are empty");
+
+        
+
     }
 
     public void createWayPoint(WorldObjective objective, Integer index) {

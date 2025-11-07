@@ -1,5 +1,11 @@
 trims:
   world-options:
+    spawn-variation:
+      min: 5
+      max: 10
+    duration:
+      # Seconds
+      meltdown: 400
     s-o:
       min: 100
       max: 300

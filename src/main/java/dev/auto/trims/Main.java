@@ -3,6 +3,7 @@ package dev.auto.trims;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketListenerPriority;
 import dev.auto.trims.commands.DebugCommands;
+import dev.auto.trims.commands.DisplayEntityDebugCommand;
 import dev.auto.trims.crafting.CraftEventListener;
 import dev.auto.trims.crafting.CraftUtils;
 import dev.auto.trims.effectHandlers.*;
@@ -74,6 +75,7 @@ public final class Main extends JavaPlugin {
         getLogger().info("Trim listeners registered");
 
         registerCommand("debug", new DebugCommands(this));
+        registerCommand("de", new DisplayEntityDebugCommand());
 
         CraftEventListener craftListener = new CraftEventListener(this);
         pl.registerEvents(craftListener, this);

@@ -8,6 +8,14 @@ trims:
       min: 5
       max: 10
 
+    spawn-variation:
+      min: 5
+      max: 10
+
+    duration:
+      # Ticks (20 ticks = 1 second). Example: 6000 ticks = 5 minutes
+      meltdown: 9000
+
   teleport-handler:
     # In seconds
     timings:
