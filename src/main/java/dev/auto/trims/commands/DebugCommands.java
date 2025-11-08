@@ -6,6 +6,7 @@ import dev.auto.trims.effectHandlers.PlayerArmorSlots;
 import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.particles.GhostStepFX;
 import dev.auto.trims.world.BorderLandWorld;
+import dev.auto.trims.world.WorldGenerator;
 import dev.auto.trims.world.WorldManager;
 import dev.auto.trims.world.WorldObjective;
 import io.papermc.paper.command.brigadier.BasicCommand;
@@ -66,6 +67,51 @@ public class DebugCommands implements BasicCommand {
                 }
                 Location loc = nether.getSpawnLocation();
                 p.teleport(loc);
+            }
+
+            case "world" -> {
+                if (!(sender instanceof Player p)) {
+                    sender.sendMessage("Only players can use this.");
+                    return;
+                }
+
+                // List worlds or teleport to a given world
+                if (args.length == 1) {
+                    List<String> names = Bukkit.getWorlds().stream()
+                            .map(World::getName)
+                            .toList();
+                    p.sendMessage("Available worlds: " + String.join(", ", names));
+                    p.sendMessage("Usage: /trimsdebug world <name>");
+                    return;
+                }
+
+                String query = args[1];
+                World target = Bukkit.getWorld(query);
+
+                if (target == null) {
+                    // Try case-insensitive and partial prefix match as a convenience
+                    String qLower = query.toLowerCase(Locale.ROOT);
+                    for (World w : Bukkit.getWorlds()) {
+                        if (w.getName().equalsIgnoreCase(query)) { target = w; break; }
+                    }
+                    if (target == null) {
+                        for (World w : Bukkit.getWorlds()) {
+                            if (w.getName().toLowerCase(Locale.ROOT).startsWith(qLower)) { target = w; break; }
+                        }
+                    }
+                }
+
+                if (target == null) {
+                    p.sendMessage("World not found. Use /trimsdebug world to list worlds.");
+                    return;
+                }
+
+                Location dest = target.getSpawnLocation();
+                if (p.teleport(dest)) {
+                    p.sendMessage("Teleported to world '" + target.getName() + "'.");
+                } else {
+                    p.sendMessage("Teleport failed.");
+                }
             }
 
             case "set" -> {
@@ -156,26 +202,37 @@ public class DebugCommands implements BasicCommand {
                 for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
                     players.add(onlinePlayer.getUniqueId());
                 }
-                UUID worldId = BorderLandWorld.createWorld();
-                var bd = new BorderLandWorld(worldId, players, Structure.DESERT_PYRAMID);
 
-                Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
-                    World world = Bukkit.getWorld(worldId.toString());
-                    if (world == null) {
-                        p.sendMessage("World not found!");
-                        return;
-                    }
-
-                    p.sendMessage(bd.worldObjectives.toString() + "Objective(s)");
-                    Location loc = bd.worldObjectives.get(Structure.DESERT_PYRAMID).spawn();
-                    if (loc == null) {
-                        p.sendMessage("Mansion objective not found!");
-                        return;
-                    }
-                    p.teleport(loc);
-                }, 20);
+                WorldGenerator generator = new WorldGenerator();
+                UUID worldId = generator.getWorldID();
 
                 p.sendMessage("World is generating; you will be teleported when it finishes loading.");
+
+                generator.whenDone().thenRun(() -> {
+                    Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                        long time = generator.getEndTime();
+                        p.sendMessage("Generated in: %time%".replace("%time%", time + "ms"));
+
+                        var bd = new BorderLandWorld(worldId, players, Structure.DESERT_PYRAMID);
+                        World world = Bukkit.getWorld(worldId.toString());
+                        if (world == null) {
+                            p.sendMessage("World not found!");
+                            return;
+                        }
+
+                        WorldObjective objective = bd.worldObjectives.get(Structure.DESERT_PYRAMID);
+                        if (objective == null) {
+                            p.sendMessage("Objective for DESERT_PYRAMID not found!");
+                            return;
+                        }
+                        Location loc = objective.spawn();
+                        if (loc == null) {
+                            p.sendMessage("Spawn location not available for the selected objective!");
+                            return;
+                        }
+                        p.teleport(loc);
+                    });
+                });
             }
 
             case "unload-world" -> {
@@ -251,7 +308,7 @@ public class DebugCommands implements BasicCommand {
                 sender.sendMessage(slots.toString());
             }
 
-            default -> sender.sendMessage("Unknown subcommand. Try: nether, set, rc, heal, explode, spawn-ghost-block, armor-profile");
+            default -> sender.sendMessage("Unknown subcommand. Try: world, nether, set, rc, heal, explode, spawn-ghost-block, armor-profile");
         }
     }
 
@@ -273,6 +330,7 @@ public class DebugCommands implements BasicCommand {
             return List.of(
                     "spawn-ghost-block",
                     "armor-profile",
+                    "world",
                     "nether",
                     "explode",
                     "heal",
@@ -290,6 +348,7 @@ public class DebugCommands implements BasicCommand {
             return List.of(
                     "spawn-ghost-block",
                     "armor-profile",
+                    "world",
                     "nether",
                     "explode",
                     "heal",
@@ -311,6 +370,16 @@ public class DebugCommands implements BasicCommand {
         if (args.length == 2 && first.equals("armor-profile")) {
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
+                    .toList();
+        }
+
+        // /trimsdebug world <name>
+        if (args.length == 2 && first.equals("world")) {
+            String q = args[1].toLowerCase(Locale.ROOT);
+            return Bukkit.getWorlds().stream()
+                    .map(World::getName)
+                    .filter(n -> n.toLowerCase(Locale.ROOT).startsWith(q))
+                    .sorted(String.CASE_INSENSITIVE_ORDER)
                     .toList();
         }
 

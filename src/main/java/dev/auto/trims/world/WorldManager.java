@@ -2,10 +2,7 @@ package dev.auto.trims.world;
 
 import io.papermc.paper.event.player.PlayerClientLoadedWorldEvent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Material;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
@@ -14,15 +11,14 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.generator.structure.Structure;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class WorldManager implements Listener {
     private static final List<Structure> structures = List.of(
@@ -46,11 +42,20 @@ public class WorldManager implements Listener {
     }
 
     private static Map<World, BorderLandWorld> worlds = new HashMap<>();
+    private static Set<UUID> globalPlayers = new HashSet<>();
     public static void addWorld(World world, BorderLandWorld borderLandWorld) {
         worlds.put(world, borderLandWorld);
+        globalPlayers.addAll(borderLandWorld.getPlayers());
     }
 
     public static void removeWorld(World world) {
+        BorderLandWorld blw = worlds.get(world);
+        if (blw != null) {
+            try {
+                globalPlayers.removeAll(new HashSet<>(blw.getPlayers()));
+            } catch (Exception ignored) {
+            }
+        }
         worlds.remove(world);
     }
 
@@ -67,6 +72,63 @@ public class WorldManager implements Listener {
 
     // On visual load
     public void onWorldLoadEvent(PlayerClientLoadedWorldEvent event) {}
+
+    @EventHandler
+    public void onDeath(PlayerDeathEvent event) {
+        Player player = event.getEntity();
+
+        BorderLandWorld bdDeath = WorldManager.getBorderWorld(player.getWorld());
+        if (bdDeath == null) return;
+
+        Location respawn = player.getRespawnLocation();
+        Location target;
+
+        if (respawn != null) {
+            World respawnWorld = respawn.getWorld();
+            BorderLandWorld bdRespawn = WorldManager.getBorderWorld(respawnWorld);
+
+            if (bdRespawn != null) {
+                target = respawn;
+            } else {
+                bdDeath.removePlayer(player);
+                target = respawn;
+                if (target.getWorld() == null) {
+                    World main = Bukkit.getWorld("world");
+                    if (main == null) main = Bukkit.getWorlds().get(0);
+                    target = main.getSpawnLocation();
+                }
+            }
+        } else {
+            bdDeath.removePlayer(player);
+            World main = Bukkit.getWorld("world");
+            if (main == null) main = Bukkit.getWorlds().get(0);
+            target = main.getSpawnLocation();
+        }
+
+        // TODO custom death message
+        player.setRespawnLocation(target, true);
+    }
+
+
+
+    @EventHandler
+    public void onMove(PlayerMoveEvent event) {
+        if (!globalPlayers.contains(event.getPlayer().getUniqueId())) return;
+
+        final UUID id = event.getPlayer().getUniqueId();
+        for (BorderLandWorld bd : worlds.values()) {
+            if (bd.frozenPlayers.contains(id)) {
+                var to = event.getTo();
+                var from = event.getFrom();
+                if (to == null) return;
+                // Lock position while allowing yaw/pitch updates to pass through
+                to.setX(from.getX());
+                to.setY(from.getY());
+                to.setZ(from.getZ());
+                event.setTo(to);
+            }
+        }
+    }
 
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {

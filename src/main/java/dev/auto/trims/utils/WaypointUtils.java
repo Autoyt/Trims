@@ -19,7 +19,7 @@ public class WaypointUtils {
         }
     }
 
-    public static Boolean RemoveWaypoint(Player player) {
+    public static Boolean removeWaypoint(Player player) {
         try {
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "waypoint modify %id% color reset"
                     .replace("%id%", player.getName()));

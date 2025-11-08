@@ -3,6 +3,7 @@ package dev.auto.trims.world;
 import dev.auto.trims.Main;
 import dev.auto.trims.customEvents.BorderLandsOnLoadEvent;
 import dev.auto.trims.effectHandlers.helpers.StatusBar;
+import dev.auto.trims.utils.FileUtils;
 import dev.auto.trims.utils.WaypointUtils;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,16 +12,24 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.generator.structure.Structure;
+import org.bukkit.generator.structure.Structure;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.StructureSearchResult;
+import org.bukkit.util.Vector;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -36,6 +45,7 @@ public class BorderLandWorld {
     public final Map<Structure, WorldObjective> worldObjectives = new HashMap<>();
     @Getter
     public final Set<UUID> players;
+    public final Set<UUID> frozenPlayers = new HashSet<>();
     public final Map<UUID, StatusBar> statuses = new HashMap<>();
     @Setter
     private Player leader;
@@ -73,7 +83,6 @@ public class BorderLandWorld {
             Main.getInstance().getLogger().warning("World not found for world ID " + worldID);
         }
 
-        // ticksUntilMeltdown is validated via readMeltdownTicks() with a safe fallback
         load();
     }
 
@@ -81,6 +90,8 @@ public class BorderLandWorld {
         if (world == null) throw new IllegalStateException("Instance not found");
         WorldManager.addWorld(world, this);
 
+        // World configuration
+        world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
 
         /** Point load **/
         File data = new File(Main.getInstance().getDataFolder(), "data/%world%/world-objectives.yml".replace("%world%", worldID.toString()));
@@ -146,31 +157,155 @@ public class BorderLandWorld {
     }
 
     public void unload() {
-        for (UUID id : new HashSet<>(players)) {
-            players.remove(id);
-            Player player = Bukkit.getPlayer(id);
-            if (player == null) continue;
-
-            Location spawn = player.getRespawnLocation();
-            if (spawn == null || spawn.getWorld() == world) spawn = Objects.requireNonNull(Bukkit.getWorld("world")).getSpawnLocation();
-            player.teleport(spawn);
-
-            player.sendMessage(MiniMessage.miniMessage().deserialize(
-                    "<red>We likely encountered an error for the world: %worldid% sending you home safely. Report to admins!"
-                            .replace("%worldid%", worldID.toString())
-            ));
-
-            WaypointUtils.RemoveWaypoint(player);
+        if (waypointTask != null) {
+            waypointTask.cancel();
+            waypointTask = null;
+        }
+        if (countdownTask != null) {
+            countdownTask.cancel();
+            countdownTask = null;
         }
 
-        if (waypointTask != null) waypointTask.cancel();
-        if (countdownTask != null) countdownTask.cancel();
-
+        // Hide all status bars safely
         for (UUID sid : new HashSet<>(statuses.keySet())) {
             StatusBar bar = statuses.remove(sid);
             if (bar != null) bar.hide();
         }
-        WorldManager.removeWorld(world);
+
+        // Safely determine an overworld to send players to
+        World overworld = Bukkit.getWorld("world");
+        if (overworld == null) {
+            List<World> worlds = Bukkit.getWorlds();
+            if (!worlds.isEmpty()) {
+                overworld = worlds.get(0);
+            }
+        }
+
+        // Teleport any remaining players in this instance world to the overworld spawn (if possible)
+        World instanceWorld = this.world != null ? this.world : Bukkit.getWorld(worldID.toString());
+        if (instanceWorld != null && overworld != null) {
+            Location safeSpawn = overworld.getSpawnLocation().clone().add(0, 1, 0);
+            for (Player p : new ArrayList<>(instanceWorld.getPlayers())) {
+                try {
+                    p.teleport(safeSpawn);
+                } catch (Exception ignored) {
+                }
+            }
+        }
+
+        // Clear tracked players from this BorderLandWorld
+        for (UUID id : new HashSet<>(players)) {
+            players.remove(id);
+        }
+
+        // Remove waypoint entity if exists
+        if (waypoint != null) {
+            try { waypoint.remove(); } catch (Exception ignored) {}
+            waypoint = null;
+        }
+
+        // Unload world if still loaded
+        if (instanceWorld != null) {
+            try {
+                Bukkit.unloadWorld(instanceWorld, false);
+            } catch (Exception ignored) {
+            }
+        }
+
+        // Delete world folder and objectives file
+        try {
+            Path worldFolder = Bukkit.getWorldContainer().toPath().resolve(worldID.toString());
+            FileUtils.deleteFolder(worldFolder);
+        } catch (Exception ignored) {
+        }
+        FileUtils.deleteObjectivesFile(worldID);
+
+        // Remove registration
+        if (instanceWorld != null) {
+            WorldManager.removeWorld(instanceWorld);
+        }
+
+        // Null out reference for safety
+        this.world = null;
+    }
+
+    public void ritual(Player player, List<ItemStack> items) {
+        Location base = player.getLocation().clone();
+        player.teleport(base.add(0, 1, 0));
+        World world = base.getWorld();
+        if (world == null || items.isEmpty()) return;
+
+        int centerX = base.getBlockX();
+        int centerZ = base.getBlockZ();
+        int floorY = base.getBlockY() - 1;
+
+        Location center = new Location(world, centerX, floorY, centerZ).getBlock().getLocation();
+        int cx = center.getBlockX();
+        int cy = center.getBlockY();
+        int cz = center.getBlockZ();
+
+        int radius = 2;
+
+        for (int x = cx - radius; x <= cx + radius; x++) {
+            for (int z = cz - radius; z <= cz + radius; z++) {
+                world.getBlockAt(x, cy, z).setType(Material.SMOOTH_QUARTZ);
+
+                for (int y = cy + 1; y <= cy + 4; y++) {
+                    world.getBlockAt(x, y, z).setType(Material.AIR);
+                }
+            }
+        }
+
+        int count = items.size();
+        int interval = Math.max(1, 80 / count);
+
+        Location dropLoc = center.clone().add(2.5, 0.5, 0.5);
+
+        player.setCanPickupItems(false);
+        frozenPlayers.add(player.getUniqueId());
+
+        for (int i = 0; i < count; i++) {
+            ItemStack stack = items.get(i).clone();
+            int delay = i * interval;
+
+            Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+                Item dropped = world.dropItem(dropLoc, stack);
+
+                Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+                    Location target = dropped.getLocation();
+                    Location orient = player.getLocation().clone();
+                    Vector toTarget = target.toVector().subtract(orient.toVector());
+                    orient.setDirection(toTarget);
+                    player.teleport(orient);
+                }, 1);
+            }, delay);
+        }
+
+        // lava at center, one block above floor
+        Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+            int lavaX = dropLoc.getBlockX();
+            int lavaZ = dropLoc.getBlockZ();
+
+            Block block = world.getBlockAt(lavaX, cy + 1, lavaZ);
+            block.setType(Material.LAVA);
+            world.strikeLightning(block.getLocation());
+
+            player.setCanPickupItems(true);
+            frozenPlayers.remove(player.getUniqueId());
+            executePlayer(player);
+
+        }, 80);
+    }
+
+    private void executePlayer(Player player) {
+        Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+            PotionEffect blindness = new PotionEffect(PotionEffectType.BLINDNESS, 20 * 10, 0);
+            player.addPotionEffect(blindness);
+            player.getInventory().clear();
+            player.setHealth(0);
+            StatusBar bar = statuses.get(player.getUniqueId());
+            if (bar != null) bar.hide();
+        }, 30);
     }
 
     private BukkitTask createCountdownTask() {
@@ -196,7 +331,35 @@ public class BorderLandWorld {
 
                 if (elapsedTicks >= ticksUntilMeltdown && before < ticksUntilMeltdown) {
                     this.cancel();
-                    // todo add meltdown logic
+                    for (UUID id : players) {
+                        Player player = Bukkit.getPlayer(id);
+                        if (player == null) continue;
+                        if (player.getWorld() != world) continue;
+
+                        List<ItemStack> items = Arrays.stream(player.getInventory().getContents())
+                            .filter(Objects::nonNull)
+                            .filter(stack -> !stack.getType().isAir())
+                            .map(ItemStack::clone)
+                            .toList();
+
+                        if (items.isEmpty()) {
+                            player.sendMessage(MiniMessage.miniMessage().deserialize("<red>You have nothing to offer... Unfortunate"));
+                            executePlayer(player);
+                            return;
+                        }
+
+                        player.getInventory().clear();
+
+                        ritual(player, items);
+                    }
+
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            unload();
+                            Main.getInstance().getLogger().info("Unloaded world " + worldID.toString() + " after meltdown");
+                        }
+                    }.runTaskLater(Main.getInstance(), 20 * 10);
                 }
             }
         }.runTaskTimer(Main.getInstance(), 0, 5);
@@ -221,12 +384,39 @@ public class BorderLandWorld {
         }.runTaskLater(Main.getInstance(), 20);
     }
 
-    public void warpPlayer(Player player) {
+    public void addPlayer(Player player) {
         if (worldObjectives.isEmpty()) throw new IllegalStateException("World Objectives are empty");
 
-        
-
     }
+
+    public void removePlayer(Player player) {
+        players.remove(player.getUniqueId());
+        WaypointUtils.removeWaypoint(player);
+        StatusBar bar = statuses.remove(player.getUniqueId());
+        if (bar != null) bar.hide();
+
+        if (!player.isDead()) {
+            Location spawn = player.getRespawnLocation();
+            if (spawn == null || spawn.getWorld() == world) {
+                spawn = Objects.requireNonNull(Bukkit.getWorld("world")).getSpawnLocation();
+            }
+            player.teleport(spawn);
+        }
+
+        if (players.isEmpty()) {
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    if (!players.isEmpty()) {
+                        cancel();
+                        return;
+                    }
+                    unload();
+                }
+            }.runTaskLater(Main.getInstance(), 20 * 5);
+        }
+    }
+
 
     public void createWayPoint(WorldObjective objective, Integer index) {
         if (index > 1 || index < 0) throw new IllegalArgumentException("Index must be between 0 and 1");
