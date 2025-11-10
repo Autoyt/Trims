@@ -20,8 +20,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.Nullable;
 
@@ -55,7 +53,7 @@ public class DebugCommands implements BasicCommand {
 
         switch (sub) {
 
-            case "nether" -> {
+            case "nether" -> { //THE NETHER
                 if (!(sender instanceof Player p)) {
                     sender.sendMessage("Only players can use this.");
                     return;
@@ -184,6 +182,15 @@ public class DebugCommands implements BasicCommand {
                     }
                 }
                 loc.getWorld().createExplosion(loc, power);
+            }
+
+            case "kys" -> {
+                if (!(sender instanceof Player p)) {
+                    sender.sendMessage("Only players can use this.");
+                    return;
+                }
+                p.setHealth(0);
+                p.sendMessage("Finally, nobody loved yo ass");
             }
 
             case "spawn-ghost-block" -> {

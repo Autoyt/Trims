@@ -1,23 +1,30 @@
 package dev.auto.trims.world;
 
+import dev.auto.trims.Main;
+import dev.auto.trims.crafting.CraftUtils;
+import dev.auto.trims.crafting.RelayAppleListener;
+import dev.auto.trims.crafting.RiftCraftListener;
 import io.papermc.paper.event.player.PlayerClientLoadedWorldEvent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
-import org.bukkit.event.player.PlayerChangedWorldEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.generator.structure.Structure;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.scheduler.BukkitRunnable;
+
 import java.util.*;
 
 public class WorldManager implements Listener {
@@ -33,6 +40,7 @@ public class WorldManager implements Listener {
             Structure.PILLAGER_OUTPOST,
             Structure.SHIPWRECK
     );
+
     public static Structure getStructureFromId(int id) {
         return structures.get(id);
     }
@@ -41,8 +49,13 @@ public class WorldManager implements Listener {
         return structures.indexOf(structure);
     }
 
-    private static Map<World, BorderLandWorld> worlds = new HashMap<>();
-    private static Set<UUID> globalPlayers = new HashSet<>();
+    private static final Map<World, BorderLandWorld> worlds = new HashMap<>();
+    private static final Set<UUID> globalPlayers = new HashSet<>();
+    private static final Set<UUID> messageCooldown = new HashSet<>();
+
+    private static final int riftCooldown = Main.getInstance().getConfig().getInt("trims.player-options.rift-cooldown");
+
+
     public static void addWorld(World world, BorderLandWorld borderLandWorld) {
         worlds.put(world, borderLandWorld);
         globalPlayers.addAll(borderLandWorld.getPlayers());
@@ -72,6 +85,23 @@ public class WorldManager implements Listener {
 
     // On visual load
     public void onWorldLoadEvent(PlayerClientLoadedWorldEvent event) {}
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onItemPlace(PlayerInteractEvent event) {
+        handleRiftToken(event);
+        handleRelayApple(event);
+    }
+
+    @EventHandler
+    public void onPortal(PlayerPortalEvent event) {
+        var cause = event.getCause();
+        if (cause != PlayerTeleportEvent.TeleportCause.NETHER_PORTAL && cause != PlayerTeleportEvent.TeleportCause.END_PORTAL) return;
+        if (!worlds.containsKey(event.getFrom().getWorld())) return;
+
+        // Blocks nether portal
+        event.setCancelled(true);
+        event.getPlayer().sendMessage(MiniMessage.miniMessage().deserialize("<red>Trying to leave? I don't think so"));
+    }
 
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
@@ -108,8 +138,6 @@ public class WorldManager implements Listener {
         // TODO custom death message
         player.setRespawnLocation(target, true);
     }
-
-
 
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
@@ -190,5 +218,108 @@ public class WorldManager implements Listener {
         attacker.playSound(attacker.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
         damaged.getWorld().spawnParticle(Particle.ASH, damaged.getLocation(), 10);
         event.setCancelled(true);
+    }
+
+    private void handleRiftToken(PlayerInteractEvent event) {
+        ItemStack item = event.getItem();
+        if (item == null || item.getType() != Material.ENDER_EYE) return;
+
+        var meta = item.getItemMeta();
+        if (meta == null) return;
+
+        var itemPdc = meta.getPersistentDataContainer();
+        Integer id = itemPdc.get(RiftCraftListener.riftKey, PersistentDataType.INTEGER);
+        if (id == null) return;
+
+        event.setCancelled(true);
+
+        Player player = event.getPlayer();
+        var playerPdc = player.getPersistentDataContainer();
+
+        long cooldownMs = riftCooldown * 50L;
+
+        Long storedCooldown = playerPdc.get(RiftCraftListener.riftKey, PersistentDataType.LONG);
+        if (storedCooldown != null) {
+            long now = System.currentTimeMillis();
+            long elapsedMs = now - storedCooldown;
+            long remainingMs = cooldownMs - elapsedMs;
+
+            if (remainingMs > 0) {
+                double cooldownHours = cooldownMs / 3_600_000d;
+                double remainingHours = remainingMs / 3_600_000d;
+
+                if (messageCooldown.contains(player.getUniqueId())) return;
+
+                String message = String.format(
+                        "<red>You may only rift once per %.1f hrs - Remaining time: %.1f hrs",
+                        cooldownHours,
+                        remainingHours
+                );
+
+                messageCooldown.add(player.getUniqueId());
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        messageCooldown.remove(player.getUniqueId());
+                    }
+                }.runTaskLater(Main.getInstance(), 40);
+
+                player.sendMessage(MiniMessage.miniMessage().deserialize(message));
+                return;
+            }
+        }
+
+        long now = System.currentTimeMillis();
+        playerPdc.set(RiftCraftListener.riftKey, PersistentDataType.LONG, now);
+
+        item.setAmount(0);
+
+        Structure structure = getStructureFromId(id);
+        if (structure == null) return;
+
+        player.sendMessage(MiniMessage.miniMessage().deserialize(
+                "<red>Rift for " + CraftUtils.getPrettyStructureName(structure)
+        ));
+    }
+
+    private void handleRelayApple(PlayerInteractEvent event) {
+        Action action = event.getAction();
+        if (action != Action.RIGHT_CLICK_AIR && action != Action.RIGHT_CLICK_BLOCK) return;
+
+        ItemStack item = event.getItem();
+        if (item == null || item.getType() != Material.ENCHANTED_GOLDEN_APPLE) return;
+
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return;
+
+        var itemPdc = meta.getPersistentDataContainer();
+        Boolean relay = itemPdc.get(RelayAppleListener.relayKey, PersistentDataType.BOOLEAN);
+        if (relay == null || !relay) return;
+
+        Player player = event.getPlayer();
+        if (!worlds.containsKey(player.getWorld())) {
+            event.setCancelled(true);
+
+            if (!messageCooldown.contains(player.getUniqueId())) {
+                player.sendMessage(MiniMessage.miniMessage().deserialize("<red>You can't use relay apples in this world!"));
+
+                messageCooldown.add(player.getUniqueId());
+                new BukkitRunnable() {
+                @Override
+                public void run() {
+                    messageCooldown.remove(player.getUniqueId());
+                }
+                }.runTaskLater(Main.getInstance(), 40);
+
+                return;
+            }
+
+            return;
+        }
+
+        int amount = Math.max(item.getAmount() - 1, 0);
+        item.setAmount(amount);
+
+        // TODO relay logic
     }
 }

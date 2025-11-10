@@ -4,8 +4,10 @@ import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketListenerPriority;
 import dev.auto.trims.commands.DebugCommands;
 import dev.auto.trims.commands.DisplayEntityDebugCommand;
-import dev.auto.trims.crafting.CraftEventListener;
 import dev.auto.trims.crafting.CraftUtils;
+import dev.auto.trims.crafting.RelayAppleListener;
+import dev.auto.trims.crafting.RiftCraftListener;
+import dev.auto.trims.crafting.TrimCraftListener;
 import dev.auto.trims.effectHandlers.*;
 import dev.auto.trims.listeners.GameListeners;
 import dev.auto.trims.managers.TrimManager;
@@ -77,8 +79,11 @@ public final class Main extends JavaPlugin {
         registerCommand("debug", new DebugCommands(this));
         registerCommand("de", new DisplayEntityDebugCommand());
 
-        CraftEventListener craftListener = new CraftEventListener(this);
+        TrimCraftListener craftListener = new TrimCraftListener(this);
         pl.registerEvents(craftListener, this);
+
+        pl.registerEvents(new RiftCraftListener(), this);
+        pl.registerEvents(new RelayAppleListener(), this);
 
         tickTask = TrimManager.start();
         for (Player p : getServer().getOnlinePlayers()) {

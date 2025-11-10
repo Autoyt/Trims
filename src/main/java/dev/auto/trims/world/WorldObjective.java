@@ -26,7 +26,6 @@ public record WorldObjective(
         return map;
     }
 
-    @SuppressWarnings("unchecked")
     public static WorldObjective deserialize(Map<String, Object> map) {
         Object rawType = map.get("type");
         if (rawType == null) {

@@ -1,12 +1,15 @@
 trims:
+  player-options:
+    # Ticks | 24hrs currently
+    rift-cooldown: 60
   world-options:
     s-o:
-      min: 200
-      max: 1000
+      min: 5
+      max: 15
     
     o-e:
-      min: 200
-      max: 1000
+      min: 5
+      max: 15
     
     spawn-variation:
       min: 5
@@ -14,10 +17,10 @@ trims:
     
     duration:
       # Ticks (20 ticks = 1 second). Example: 6000 ticks = 5 minutes
-      meltdown: 9000
+      meltdown: 600
     
     generation:
-      cpt: 2
+      cpt: 1
       buffer-chunks: 1
   
   teleport-handler:

@@ -6,6 +6,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import org.bukkit.generator.structure.Structure;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.meta.ArmorMeta;
@@ -54,5 +55,15 @@ public class CraftUtils {
         item.setItemMeta(meta);
 
         return item;
+    }
+
+    public static String getPrettyStructureName(Structure structure) {
+        String raw = structure.getStructureType().key().asString().toLowerCase().replace("minecraft:", "");
+        String[] split = raw.split("_");
+        StringBuilder sb = new StringBuilder();
+        for (String s : split) {
+            sb.append(s.substring(0, 1).toUpperCase()).append(s.substring(1).toLowerCase()).append(" ");
+        }
+        return sb.toString().trim();
     }
 }
