@@ -8,6 +8,7 @@ server/world_the_end
 server/logs
 server/plugins/spark
 server/.console_history
+server/*-*/
 dev_proxy
 
 *.hprof
