@@ -5,11 +5,14 @@ import dev.auto.trims.crafting.CraftUtils;
 import dev.auto.trims.crafting.RelayAppleListener;
 import dev.auto.trims.crafting.RiftCraftListener;
 import dev.auto.trims.customEvents.NewBorderlandGenerationEvent;
+import dev.auto.trims.particles.InputRift;
+import dev.auto.trims.particles.utils.ColorUtils;
 import dev.auto.trims.utils.FileUtils;
 import io.papermc.paper.event.player.PlayerClientLoadedWorldEvent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -174,7 +177,6 @@ public class WorldManager implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onItemPlace(PlayerInteractEvent event) {
         handleRiftToken(event);
-        handleRelayApple(event);
     }
 
     @EventHandler
@@ -421,21 +423,19 @@ public class WorldManager implements Listener {
         Structure structure = getStructureFromId(id);
         if (structure == null) return;
 
-        player.sendMessage(MiniMessage.miniMessage().deserialize(
-                "<red>Rift for " + CraftUtils.getPrettyStructureName(structure)
-        ));
+        Block base = event.getClickedBlock();
+        if (base == null) {
+            base = player.getLocation().getBlock();
+        }
 
-        var players = new HashSet<UUID>();
-        players.add(player.getUniqueId());
+        BlockFace face = event.getBlockFace();
+        Block intendedBlock = base.getRelative(face);
 
-        var bd = new BorderLandWorld(players, structure);
-        player.teleport(bd.worldObjectives.get(structure).spawn());
+        new InputRift(intendedBlock.getLocation(), structure);
     }
 
-    private void handleRelayApple(PlayerInteractEvent event) {
-        Action action = event.getAction();
-        if (action != Action.RIGHT_CLICK_AIR && action != Action.RIGHT_CLICK_BLOCK) return;
-
+    @EventHandler
+    public void onRelayAppleConsume(PlayerItemConsumeEvent event) {
         ItemStack item = event.getItem();
         if (item == null || item.getType() != Material.ENCHANTED_GOLDEN_APPLE) return;
 
@@ -451,25 +451,54 @@ public class WorldManager implements Listener {
             event.setCancelled(true);
 
             if (!messageCooldown.contains(player.getUniqueId())) {
-                player.sendMessage(MiniMessage.miniMessage().deserialize("<red>You can't use relay apples in this world!"));
+                player.sendMessage(MiniMessage.miniMessage()
+                        .deserialize("<red>You can't use relay apples in this world!"));
 
                 messageCooldown.add(player.getUniqueId());
                 new BukkitRunnable() {
-                @Override
-                public void run() {
-                    messageCooldown.remove(player.getUniqueId());
-                }
+                    @Override
+                    public void run() {
+                        messageCooldown.remove(player.getUniqueId());
+                    }
                 }.runTaskLater(Main.getInstance(), 40);
-
-                return;
             }
-
             return;
         }
 
-        int amount = Math.max(item.getAmount() - 1, 0);
-        item.setAmount(amount);
+        var bd = worlds.get(player.getWorld());
 
-        // TODO relay logic
+        if (!bd.getPlayers().contains(player.getUniqueId())) {
+            event.setCancelled(true);  // no effects, no item eaten
+            player.sendMessage(MiniMessage.miniMessage()
+                    .deserialize("<red>You dont need that"));
+            return;
+        }
+
+        Particle.DustOptions dustOptions = new Particle.DustTransition(
+                Color.fromRGB(ColorUtils.hexToRgbInt("#edaf02")),
+                Color.fromRGB(ColorUtils.hexToRgbInt("#262626")),
+                1f
+        );
+
+        player.playSound(player.getLocation(), Sound.ITEM_GOAT_HORN_SOUND_3, 1f, 1f);
+        player.getWorld().spawnParticle(
+                Particle.DUST_COLOR_TRANSITION,
+                player.getLocation(),
+                70,
+                2, 2, 2,
+                2,
+                dustOptions
+        );
+        player.sendMessage(MiniMessage.miniMessage()
+                .deserialize("<green>Sending you home!"));
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                bd.removePlayer(player);
+            }
+        }.runTaskLater(Main.getInstance(), 30);
     }
+
+
 }

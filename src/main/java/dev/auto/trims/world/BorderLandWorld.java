@@ -1,9 +1,12 @@
 package dev.auto.trims.world;
 
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import dev.auto.trims.Main;
 import dev.auto.trims.customEvents.BorderLandsOnLoadEvent;
 import dev.auto.trims.effectHandlers.helpers.StatusBar;
+import dev.auto.trims.particles.utils.WarpInEntity;
 import dev.auto.trims.utils.FileUtils;
+import dev.auto.trims.utils.LocationUtils;
 import dev.auto.trims.utils.WaypointUtils;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,7 +21,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
-import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -35,14 +37,6 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class BorderLandWorld {
-    private static int readMeltdownTicks() {
-        int value = Main.getInstance().getConfig().getInt("trims.world-options.duration.meltdown", 6000);
-        if (value <= 0) {
-            Main.getInstance().getLogger().warning("Invalid 'trims.world-options.duration.meltdown' (" + value + ") — falling back to 6000 ticks (5 minutes)");
-            return 6000;
-        }
-        return value;
-    }
     public final Map<Structure, WorldObjective> worldObjectives = new HashMap<>();
     @Getter
     public final Set<UUID> players;
@@ -56,7 +50,8 @@ public class BorderLandWorld {
     private final Structure structure;
     private BukkitTask waypointTask;
     private BukkitTask countdownTask;
-    private final int ticksUntilMeltdown = readMeltdownTicks();
+    private final int ticksUntilMeltdown;
+    private final ConfigurationSection config;
 
     @Setter
     private int elapsedTicks = 0;
@@ -101,6 +96,11 @@ public class BorderLandWorld {
             world = Bukkit.createWorld(new WorldCreator(worldID.toString()));
         }
         this.world = world;
+
+        config = Main.getInstance().getConfig().getConfigurationSection("trims.structure-options.%id%".replace("%id%", WorldManager.getIdFromStructure(structure).toString()));
+        if (config == null) throw new IllegalStateException("Structure config not found");
+
+        ticksUntilMeltdown = config.getInt("time-to-meltdown");
 
         load();
     }
@@ -396,7 +396,51 @@ public class BorderLandWorld {
 
     public void addPlayer(Player player) {
         if (worldObjectives.isEmpty()) throw new IllegalStateException("World Objectives are empty");
+        if (!players.contains(player.getUniqueId())) throw new IllegalStateException("Player is not in world");
 
+        WorldObjective objective = worldObjectives.get(structure);
+        if (objective == null)
+            throw new IllegalStateException("World objective for structure " + structure + " is null");
+
+        int spawnVariation = Main.getInstance().getConfig().getInt("trims.player-options.spawn-variation");
+        if (spawnVariation <= 0) throw new IllegalStateException("Spawn variation is not supported");
+
+        Location spawn = objective.spawn().clone().add(0, 70, 0);
+        Location dropPoint = LocationUtils.randomInCircle(spawn, spawnVariation);
+
+        PotionEffect sf = new PotionEffect(PotionEffectType.SLOW_FALLING, Integer.MAX_VALUE, 1, false, false);
+        player.addPotionEffect(sf);
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (player.isDead() || !player.isOnline()) {
+                    player.removePotionEffect(PotionEffectType.SLOW_FALLING);
+                    cancel();
+                    return;
+                }
+
+                if (!player.isOnGround()) return;
+                player.removePotionEffect(PotionEffectType.SLOW_FALLING);
+                player.playSound(player.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1f, 1f);
+                cancel();
+            }
+        }.runTaskTimer(Main.getInstance(), 20, 5);
+
+        if (!dropPoint.isChunkLoaded()) {
+            dropPoint.getChunk().load();
+        }
+
+        WarpInEntity warpInEntity = new WarpInEntity(dropPoint.clone().add(-1f, 3, -1f));
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                warpInEntity.destroy();
+            }
+
+        }.runTaskLater(Main.getInstance(), 20 * 10);
+
+        player.teleport(dropPoint);
     }
 
     public void removePlayer(Player player) {

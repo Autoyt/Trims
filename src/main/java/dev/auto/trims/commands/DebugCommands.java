@@ -232,7 +232,7 @@ public class DebugCommands implements BasicCommand {
 
             case "tp" -> {
                 if (!(sender instanceof Player p)) return;
-                new InputRift(p.getLocation());
+                new InputRift(p.getLocation(), Structure.MANSION);
             }
 
             case "crift" -> {

@@ -44,11 +44,6 @@ public class WorldGenerator {
     @Getter
     private long endTime;
 
-    private final double spawnMin;
-    private final double spawnMax;
-    private final double exitMin;
-    private final double exitMax;
-
     private int bufferChunks;
     private int chunksPerTick;
     public WorldGenerator() {
@@ -70,11 +65,6 @@ public class WorldGenerator {
         if (generation == null) {
             throw new IllegalStateException("Generation config is null");
         }
-
-        spawnMin = spawnToObjective.getDouble("min");
-        spawnMax = spawnToObjective.getDouble("max");
-        exitMin = objectiveToExtraction.getDouble("min");
-        exitMax = objectiveToExtraction.getDouble("max");
 
         bufferChunks = generation.getInt("buffer-chunks");
         chunksPerTick = generation.getInt("cpt");
@@ -261,8 +251,24 @@ public class WorldGenerator {
         Block highestObjective = world.getHighestBlockAt(baseX, baseZ);
         Location objective = highestObjective.getLocation().add(0.5, 1, 0.5);
 
+        String id = WorldManager.getIdFromStructure(structure).toString();
+        ConfigurationSection worldOptions = Main.getInstance().getConfig()
+                .getConfigurationSection("trims.structure-options." + id);
+
+        if (worldOptions == null) {
+            throw new IllegalStateException("Missing structure-options config for id " + id);
+        }
+
+        double radiusMin = worldOptions.getDouble("min");
+        double radiusMax = worldOptions.getDouble("max");
+
+        if (radiusMax <= radiusMin) {
+            radiusMax = radiusMin + 1.0;
+        }
+
         double angleSpawn = rnd.nextDouble(0, Math.PI * 2);
-        double radiusSpawn = rnd.nextDouble(spawnMin, spawnMax);
+        double radiusSpawn = rnd.nextDouble(radiusMin, radiusMax);
+
         double spawnX = objective.getX() + Math.cos(angleSpawn) * radiusSpawn;
         double spawnZ = objective.getZ() + Math.sin(angleSpawn) * radiusSpawn;
 
@@ -272,7 +278,8 @@ public class WorldGenerator {
         Location spawn = highestSpawn.getLocation().add(0.5, 1, 0.5);
 
         double angleExit = rnd.nextDouble(0, Math.PI * 2);
-        double radiusExit = rnd.nextDouble(exitMin, exitMax);
+        double radiusExit = rnd.nextDouble(radiusMin, radiusMax);
+
         double exitX = objective.getX() + Math.cos(angleExit) * radiusExit;
         double exitZ = objective.getZ() + Math.sin(angleExit) * radiusExit;
 
@@ -288,5 +295,6 @@ public class WorldGenerator {
                 exit
         );
     }
+
 
 }

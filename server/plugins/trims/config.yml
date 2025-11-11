@@ -1,5 +1,87 @@
 trims:
+  structure-options:
+    '0':
+      name: Desert Temple
+      min: 10
+      max: 20
+      follow-distance: 60
+      world-border: true
+      wd-buffer: 10
+      time-to-meltdown: 27000
+    '1':
+      name: Jungle Temple
+      min: 10
+      max: 20
+      follow-distance: 60
+      world-border: true
+      wd-buffer: 10
+      time-to-meltdown: 27000
+    '2':
+      name: Ancient City
+      min: 10
+      max: 20
+      follow-distance: 60
+      world-border: true
+      wd-buffer: 10
+      time-to-meltdown: 27000
+    '3':
+      name: Trial Chamber
+      min: 10
+      max: 20
+      follow-distance: 60
+      world-border: true
+      wd-buffer: 10
+      time-to-meltdown: 27000
+    '4':
+      name: Trail Ruins
+      min: 10
+      max: 20
+      follow-distance: 60
+      world-border: true
+      wd-buffer: 10
+      time-to-meltdown: 27000
+    '5':
+      name: Stronghold
+      min: 10
+      max: 20
+      follow-distance: 60
+      world-border: true
+      wd-buffer: 10
+      time-to-meltdown: 27000
+    '6':
+      name: Mansion
+      min: 10
+      max: 20
+      follow-distance: 60
+      world-border: true
+      wd-buffer: 10
+      time-to-meltdown: 27000
+    '7':
+      name: Monument
+      min: 10
+      max: 20
+      follow-distance: 60
+      world-border: true
+      wd-buffer: 10
+      time-to-meltdown: 27000
+    '8':
+      name: Pillager Outpost
+      min: 10
+      max: 20
+      follow-distance: 60
+      world-border: true
+      wd-buffer: 10
+      time-to-meltdown: 27000
+    '9':
+      name: Shipwreck
+      min: 10
+      max: 20
+      follow-distance: 60
+      world-border: true
+      wd-buffer: 10
+      time-to-meltdown: 27000
   player-options:
+    spawn-variation: 10
     # Ticks | 24hrs currently
     rift-cooldown: 60
   world-options:

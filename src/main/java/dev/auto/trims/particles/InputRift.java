@@ -2,6 +2,7 @@ package dev.auto.trims.particles;
 
 import dev.auto.trims.Main;
 import dev.auto.trims.particles.utils.ColorUtils;
+import dev.auto.trims.world.BorderLandWorld;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -9,6 +10,7 @@ import org.bukkit.block.data.type.Light;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
+import org.bukkit.generator.structure.Structure;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -19,12 +21,16 @@ import org.bukkit.util.Vector;
 import org.joml.Matrix4f;
 
 import java.util.Collection;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class InputRift {
     private static final float REGISTRY_DISTANCE = 15f;
 
     private final Location origin;
+    private BorderLandWorld bd;
+    private final Structure structure;
 
     private BukkitTask fingerTask;
     private BukkitTask ambientTask;
@@ -53,9 +59,11 @@ public class InputRift {
             1.0f
     );
 
-    public InputRift(Location origin) {
+    public InputRift(Location origin, Structure structure) {
         this.origin = origin.clone().getBlock().getLocation().add(0.5, 4, 0.5);
         this.origin.setRotation(0, 0);
+
+        this.structure = structure;
 
         Block block = this.origin.getBlock();
         block.setType(Material.LIGHT, false);
@@ -88,9 +96,8 @@ public class InputRift {
         World world = origin.getWorld();
         if (world == null) return;
 
-        int animationDuration = 20 * 3; // 3 seconds
+        int animationDuration = 20 * 3;
 
-        // final "base" transform (we'll reuse the same scale while spinning)
         Matrix4f endMatrix = new Matrix4f()
                 .scale(1.6f)
                 .rotateY((float) Math.toRadians(180));
@@ -152,6 +159,13 @@ public class InputRift {
                 p -> true
             );
 
+
+            Set<UUID> uuids = nearbyPlayers.stream()
+                    .map(Player::getUniqueId)
+                    .collect(Collectors.toSet());
+
+            bd = new BorderLandWorld(uuids, structure);
+
             for (Player p : nearbyPlayers) {
                 p.setGlowing(false);
                 selectedTeam.removeEntry(p.getName());
@@ -160,8 +174,7 @@ public class InputRift {
                 p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 1f);
                 p.getWorld().spawnParticle(Particle.DUST, p.getLocation(), 10, 0.3, 0.3, 0.3, 1.5, teleportDustOptions);
 
-                // Leave logic
-                p.sendMessage(ChatColor.RED + "You left the rift.");
+                bd.addPlayer(p);
             }
 
             new BukkitRunnable() {
