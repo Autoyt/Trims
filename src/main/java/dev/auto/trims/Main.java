@@ -13,6 +13,7 @@ import dev.auto.trims.listeners.GameListeners;
 import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.world.WorldManager;
 import dev.auto.trims.world.WorldObjective;
+import dev.auto.trims.world.WorldGenerator;
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import lombok.Getter;
 import org.bukkit.Bukkit;
@@ -69,6 +70,7 @@ public final class Main extends JavaPlugin {
         pl.registerEvents(new ResistanceHandler(this), this);
 
         pl.registerEvents(new WorldManager(), this);
+        WorldManager.cleanupWorlds();
 
         InvisibiltyHandler invisibiltyHandler = new InvisibiltyHandler(this);
         pl.registerEvents(invisibiltyHandler, this);

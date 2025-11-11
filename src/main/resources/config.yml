@@ -19,6 +19,9 @@ trims:
     generation:
       cpt: 2
       buffer-chunks: 1
+      start-intial-generation-ticks: 6000
+      start-after-empty-ticks: 6000
+      max-generated-worlds: 15
 
   player-options:
     # Ticks | 24hrs currently

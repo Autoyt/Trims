@@ -4,10 +4,15 @@ import dev.auto.trims.Main;
 import dev.auto.trims.crafting.CraftUtils;
 import dev.auto.trims.crafting.RelayAppleListener;
 import dev.auto.trims.crafting.RiftCraftListener;
+import dev.auto.trims.customEvents.NewBorderlandGenerationEvent;
+import dev.auto.trims.utils.FileUtils;
 import io.papermc.paper.event.player.PlayerClientLoadedWorldEvent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.configuration.Configuration;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
@@ -19,12 +24,16 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.*;
+import org.bukkit.event.world.WorldLoadEvent;
+import org.bukkit.generator.structure.GeneratedStructure;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 public class WorldManager implements Listener {
@@ -52,9 +61,14 @@ public class WorldManager implements Listener {
     private static final Map<World, BorderLandWorld> worlds = new HashMap<>();
     private static final Set<UUID> globalPlayers = new HashSet<>();
     private static final Set<UUID> messageCooldown = new HashSet<>();
+    private static UUID loadingWorld;
 
     private static final int riftCooldown = Main.getInstance().getConfig().getInt("trims.player-options.rift-cooldown");
 
+    private static final ConfigurationSection generationOptions = Objects.requireNonNull(Main.getInstance().getConfig().getConfigurationSection("trims.world-options.generation"));
+    private static final int intialGenerationCooldown = generationOptions.getInt("start-intial-generation-ticks");
+    private static final int emptyGenerationCooldown = generationOptions.getInt("start-after-empty-ticks");
+    private static final int maxGeneratedWorlds = generationOptions.getInt("max-generated-worlds");
 
     public static void addWorld(World world, BorderLandWorld borderLandWorld) {
         worlds.put(world, borderLandWorld);
@@ -72,18 +86,89 @@ public class WorldManager implements Listener {
         worlds.remove(world);
     }
 
+    public WorldManager() {
+        File file = new File(Main.getInstance().getDataFolder(), "data/generated-worlds.yml");
+        File parent = file.getParentFile();
+        if (parent != null && !parent.exists()) {
+            parent.mkdirs();
+        }
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+
+        if (!(config.getStringList("generated-worlds").size() >= maxGeneratedWorlds)) {
+            new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (loadingWorld == null) {
+                    if (!Bukkit.getOnlinePlayers().isEmpty()) return;
+
+                    WorldGenerator generator = new WorldGenerator();
+                    loadingWorld = generator.getWorldID();
+                }
+            }
+        }.runTaskLater(Main.getInstance(), intialGenerationCooldown);
+        }
+
+    }
+
+    public static void cleanupWorlds() {
+        File serverContainer = Bukkit.getWorldContainer();
+        File[] worldFolders = serverContainer.listFiles(file ->
+                file.isDirectory() && new File(file, "level.dat").exists()
+        );
+
+        if (worldFolders == null) {
+            throw new IllegalStateException("Failed to list world folders");
+        }
+
+        File file = new File(Main.getInstance().getDataFolder(), "data/generated-worlds.yml");
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+        List<String> worlds = config.getStringList("generated-worlds");
+        Set<String> valid = new HashSet<>(worlds);
+
+        Set<String> existingNames = new HashSet<>();
+
+        for (File folder : worldFolders) {
+            String name = folder.getName();
+            existingNames.add(name);
+
+            if (name.equals("world") || name.equals("world_nether") || name.equals("world_the_end")) {
+                continue;
+            }
+
+            if (!valid.contains(name)) {
+                World loaded = Bukkit.getWorld(name);
+                if (loaded != null) {
+                    Bukkit.unloadWorld(loaded, false);
+                }
+
+                FileUtils.deleteFolder(folder.toPath());
+
+                File dataDir = new File(Main.getInstance().getDataFolder(), "data/" + name);
+                FileUtils.deleteFolder(dataDir.toPath());
+            }
+        }
+
+        worlds.removeIf(w -> !existingNames.contains(w));
+        config.set("generated-worlds", worlds);
+        try {
+            config.save(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static BorderLandWorld getBorderWorld(World world) {
         return worlds.get(world);
     }
 
-    // On actual load
+    @EventHandler
     public void onWorldChangeEvent(PlayerChangedWorldEvent event) {
         // Add some locator bar logic here. World load resets stuff
         // TODO fix particles
         // TODO use ints for structure types, preload
     }
 
-    // On visual load
+    @EventHandler
     public void onWorldLoadEvent(PlayerClientLoadedWorldEvent event) {}
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -101,6 +186,65 @@ public class WorldManager implements Listener {
         // Blocks nether portal
         event.setCancelled(true);
         event.getPlayer().sendMessage(MiniMessage.miniMessage().deserialize("<red>Trying to leave? I don't think so"));
+    }
+
+    @EventHandler
+    public void onEmptyServer(PlayerQuitEvent event) {
+        Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+            if (!Bukkit.getOnlinePlayers().isEmpty()) return;
+
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    if (!Bukkit.getOnlinePlayers().isEmpty()) return;
+                    Main.getInstance().getLogger().info("Server is empty, generating a new world...");
+
+                    WorldGenerator generator = new WorldGenerator();
+                    loadingWorld = generator.getWorldID();
+                }
+
+            }.runTaskLater(Main.getInstance(), emptyGenerationCooldown);
+        }, 1);
+    }
+
+    @EventHandler
+    public void onWorldLoad(PlayerJoinEvent event) {
+        if (loadingWorld == null) return;
+        event.getPlayer().sendMessage(MiniMessage.miniMessage().deserialize("<green>Generating world, expect lag for a short period."));
+    }
+
+    @EventHandler
+    public void onGenerationEvent(NewBorderlandGenerationEvent event) {
+        UUID worldID = event.getWorldID();
+        String name = event.getWorldName();
+
+        File file = new File(Main.getInstance().getDataFolder(), "data/generated-worlds.yml");
+        File parent = file.getParentFile();
+        if (parent != null && !parent.exists()) {
+            parent.mkdirs();
+        }
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+
+        List<String> worlds = config.getStringList("generated-worlds");
+
+        if (!worlds.contains(name)) {
+            worlds.add(name);
+            config.set("generated-worlds", worlds);
+            try {
+                config.save(file);
+            } catch (IOException e) {
+                Main.getInstance().getLogger().warning("Failed to save generated world list: " + e.getMessage());
+            }
+        }
+
+        if (!Bukkit.getOnlinePlayers().isEmpty() || worlds.size() >= maxGeneratedWorlds) {
+            Main.getInstance().getLogger().info("Server is not empty or world list is full, not generating a new world");
+            loadingWorld = null;
+            return;
+        }
+
+        loadingWorld = new WorldGenerator().getWorldID();
+        Main.getInstance().getLogger().info("Generating %worldid%".replace("%worldid%", loadingWorld.toString()));
     }
 
     @EventHandler
@@ -280,6 +424,12 @@ public class WorldManager implements Listener {
         player.sendMessage(MiniMessage.miniMessage().deserialize(
                 "<red>Rift for " + CraftUtils.getPrettyStructureName(structure)
         ));
+
+        var players = new HashSet<UUID>();
+        players.add(player.getUniqueId());
+
+        var bd = new BorderLandWorld(players, structure);
+        player.teleport(bd.worldObjectives.get(structure).spawn());
     }
 
     private void handleRelayApple(PlayerInteractEvent event) {

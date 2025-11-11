@@ -1,6 +1,7 @@
 package dev.auto.trims.world;
 
 import dev.auto.trims.Main;
+import dev.auto.trims.customEvents.NewBorderlandGenerationEvent;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
@@ -40,7 +41,6 @@ public class WorldGenerator {
     private Location origin;
     private final ConfigurationSection worldConfig = Main.getInstance().getConfig().getConfigurationSection("trims.world-options");
     private long startTime;
-    private final CompletableFuture<Void> generationFuture = new CompletableFuture<>();
     @Getter
     private long endTime;
 
@@ -110,7 +110,10 @@ public class WorldGenerator {
                         Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
                             flushFile(worldObjectives);
                             endTime = System.currentTimeMillis() - startTime;
-                            generationFuture.complete(null);
+
+                            Bukkit.unloadWorld(world, true);
+                            world = null;
+                            Main.getInstance().getServer().getPluginManager().callEvent(new NewBorderlandGenerationEvent(worldID, endTime));
                         });
                     });
                     cancel();
@@ -236,7 +239,6 @@ public class WorldGenerator {
         return future;
     }
 
-
     private Location locateStructure(Structure structure, Optional<Integer> distance) {
         int d = distance.orElse(1000);
         while (d < 20000) {
@@ -285,10 +287,6 @@ public class WorldGenerator {
                 objective,
                 exit
         );
-    }
-
-    public CompletableFuture<Void> whenDone() {
-        return generationFuture;
     }
 
 }

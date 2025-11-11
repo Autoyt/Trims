@@ -29,6 +29,7 @@ import org.bukkit.util.StructureSearchResult;
 import org.bukkit.util.Vector;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -73,15 +74,33 @@ public class BorderLandWorld {
             Structure.SHIPWRECK
     );
 
-    public BorderLandWorld(UUID worldID, Set<UUID> players, Structure structure) {
-        this.worldID = worldID;
+    public BorderLandWorld(Set<UUID> players, Structure structure) {
         this.players = players;
         this.structure = structure;
 
-        this.world = Bukkit.getWorld(worldID.toString());
-        if (this.world == null) {
-            Main.getInstance().getLogger().warning("World not found for world ID " + worldID);
+        File configFile = new File(Main.getInstance().getDataFolder(), "data/generated-worlds.yml");
+        YamlConfiguration configData = YamlConfiguration.loadConfiguration(configFile);
+
+        List<String> possibleWorldIds = configData.getStringList("generated-worlds");
+        if (possibleWorldIds.isEmpty()) throw new IllegalStateException("No generated worlds found");
+
+        String worldId = possibleWorldIds.getFirst();
+        this.worldID = UUID.fromString(worldId);
+
+        possibleWorldIds.remove(worldId);
+        configData.set("generated-worlds", possibleWorldIds);
+        try {
+            configData.save(configFile);
         }
+        catch (IOException e) {
+            Main.getInstance().getLogger().warning("Failed to save generated worlds config");
+        }
+
+        World world = Bukkit.getWorld(worldID.toString());
+        if (world == null) {
+            world = Bukkit.createWorld(new WorldCreator(worldID.toString()));
+        }
+        this.world = world;
 
         load();
     }
@@ -93,7 +112,6 @@ public class BorderLandWorld {
         // World configuration
         world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
 
-        /** Point load **/
         File data = new File(Main.getInstance().getDataFolder(), "data/%world%/world-objectives.yml".replace("%world%", worldID.toString()));
         YamlConfiguration config = YamlConfiguration.loadConfiguration(data);
         for (String key : config.getKeys(false)) {
@@ -166,13 +184,11 @@ public class BorderLandWorld {
             countdownTask = null;
         }
 
-        // Hide all status bars safely
         for (UUID sid : new HashSet<>(statuses.keySet())) {
             StatusBar bar = statuses.remove(sid);
             if (bar != null) bar.hide();
         }
 
-        // Safely determine an overworld to send players to
         World overworld = Bukkit.getWorld("world");
         if (overworld == null) {
             List<World> worlds = Bukkit.getWorlds();
@@ -181,7 +197,6 @@ public class BorderLandWorld {
             }
         }
 
-        // Teleport any remaining players in this instance world to the overworld spawn (if possible)
         World instanceWorld = this.world != null ? this.world : Bukkit.getWorld(worldID.toString());
         if (instanceWorld != null && overworld != null) {
             Location safeSpawn = overworld.getSpawnLocation().clone().add(0, 1, 0);
@@ -193,12 +208,10 @@ public class BorderLandWorld {
             }
         }
 
-        // Clear tracked players from this BorderLandWorld
         for (UUID id : new HashSet<>(players)) {
             players.remove(id);
         }
 
-        // Remove waypoint entity if exists
         if (waypoint != null) {
             try { waypoint.remove(); } catch (Exception ignored) {}
             waypoint = null;
@@ -220,12 +233,9 @@ public class BorderLandWorld {
         }
         FileUtils.deleteObjectivesFile(worldID);
 
-        // Remove registration
         if (instanceWorld != null) {
             WorldManager.removeWorld(instanceWorld);
         }
-
-        // Null out reference for safety
         this.world = null;
     }
 
@@ -260,8 +270,6 @@ public class BorderLandWorld {
         int interval = Math.max(1, 80 / count);
 
         Location dropLoc = center.clone().add(2.5, 0.5, 0.5);
-
-        player.setCanPickupItems(false);
         frozenPlayers.add(player.getUniqueId());
 
         for (int i = 0; i < count; i++) {
@@ -269,7 +277,10 @@ public class BorderLandWorld {
             int delay = i * interval;
 
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
-                Item dropped = world.dropItem(dropLoc, stack);
+                Item dropped = world.dropItem(dropLoc.clone().add(0, 1, 0), stack);
+                dropped.setPickupDelay(Integer.MAX_VALUE);
+                dropped.setVelocity(new Vector(0, 0, 0));
+                dropped.setGravity(false);
 
                 Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
                     Location target = dropped.getLocation();
@@ -290,7 +301,6 @@ public class BorderLandWorld {
             block.setType(Material.LAVA);
             world.strikeLightning(block.getLocation());
 
-            player.setCanPickupItems(true);
             frozenPlayers.remove(player.getUniqueId());
             executePlayer(player);
 
@@ -416,7 +426,6 @@ public class BorderLandWorld {
             }.runTaskLater(Main.getInstance(), 20 * 5);
         }
     }
-
 
     public void createWayPoint(WorldObjective objective, Integer index) {
         if (index > 1 || index < 0) throw new IllegalArgumentException("Index must be between 0 and 1");

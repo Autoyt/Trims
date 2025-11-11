@@ -1,8 +1,3 @@
-- Add outside world border thingamabob
-- Switch HOTV and Luck for artificial fortune
-- if you get hit you fall in levitation
-- Add bossbar hider
-- add that region shii
-- add what hudson said about the absorption thingi
-- bug players glowing undfer dune effect not updating
-- Portal to borderlands, ban echest/shulkers. No team killing
+- per structure distance settings
+- add placeholder api support
+- Ritual not being able to look fix

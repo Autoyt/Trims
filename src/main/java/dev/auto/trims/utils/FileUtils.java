@@ -15,20 +15,24 @@ public class FileUtils {
     public static void deleteFolder(Path folder) {
         if (!Files.exists(folder)) return;
 
-        try {
-            Files.walk(folder)
-                    .sorted(Comparator.reverseOrder())
+        try (var walk = Files.walk(folder)) {
+            walk.sorted(Comparator.reverseOrder())
                     .forEach(path -> {
                         try {
                             Files.delete(path);
                         } catch (IOException e) {
-                            throw new UncheckedIOException(e);
+                            Main.getInstance().getLogger().warning(
+                                    "Failed to delete " + path + ": " + e.getMessage()
+                            );
                         }
                     });
         } catch (IOException e) {
-            Main.getInstance().getLogger().warning("Failed to delete folder %folder%: ".replace("%folder%", folder.toString()) + e.getMessage());
+            Main.getInstance().getLogger().warning(
+                    "Failed to walk folder " + folder + ": " + e.getMessage()
+            );
         }
-    }
+}
+
 
     public static void deleteObjectivesFile(UUID worldId) {
         Path folder = Main.getInstance().getDataFolder().toPath().resolve("data").resolve(worldId.toString());

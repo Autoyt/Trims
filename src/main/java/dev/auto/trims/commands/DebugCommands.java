@@ -5,8 +5,8 @@ import dev.auto.trims.crafting.CraftUtils;
 import dev.auto.trims.effectHandlers.PlayerArmorSlots;
 import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.particles.GhostStepFX;
+import dev.auto.trims.particles.InputRift;
 import dev.auto.trims.world.BorderLandWorld;
-import dev.auto.trims.world.WorldGenerator;
 import dev.auto.trims.world.WorldManager;
 import dev.auto.trims.world.WorldObjective;
 import io.papermc.paper.command.brigadier.BasicCommand;
@@ -18,13 +18,15 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
 import org.bukkit.generator.structure.Structure;
+import org.bukkit.inventory.CraftingInventory;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class DebugCommands implements BasicCommand {
 
@@ -210,36 +212,9 @@ public class DebugCommands implements BasicCommand {
                     players.add(onlinePlayer.getUniqueId());
                 }
 
-                WorldGenerator generator = new WorldGenerator();
-                UUID worldId = generator.getWorldID();
-
-                p.sendMessage("World is generating; you will be teleported when it finishes loading.");
-
-                generator.whenDone().thenRun(() -> {
-                    Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
-                        long time = generator.getEndTime();
-                        p.sendMessage("Generated in: %time%".replace("%time%", time + "ms"));
-
-                        var bd = new BorderLandWorld(worldId, players, Structure.DESERT_PYRAMID);
-                        World world = Bukkit.getWorld(worldId.toString());
-                        if (world == null) {
-                            p.sendMessage("World not found!");
-                            return;
-                        }
-
-                        WorldObjective objective = bd.worldObjectives.get(Structure.DESERT_PYRAMID);
-                        if (objective == null) {
-                            p.sendMessage("Objective for DESERT_PYRAMID not found!");
-                            return;
-                        }
-                        Location loc = objective.spawn();
-                        if (loc == null) {
-                            p.sendMessage("Spawn location not available for the selected objective!");
-                            return;
-                        }
-                        p.teleport(loc);
-                    });
-                });
+                BorderLandWorld bd = new BorderLandWorld(players, Structure.MANSION);
+                WorldObjective objective = bd.worldObjectives.get(Structure.MANSION);
+                p.teleport(objective.spawn());
             }
 
             case "unload-world" -> {
@@ -255,48 +230,55 @@ public class DebugCommands implements BasicCommand {
                 p.sendMessage("Unloaded!");
             }
 
-            case "new-objective" -> {
+            case "tp" -> {
                 if (!(sender instanceof Player p)) return;
-                Location loc = p.getLocation();
+                new InputRift(p.getLocation());
+            }
 
-                WorldObjective obj = new WorldObjective(WorldManager.getIdFromStructure(Structure.ANCIENT_CITY), loc, loc, loc);
-                Set<UUID> onlinePlayerIds = Bukkit.getOnlinePlayers().stream()
-                        .map(Player::getUniqueId)
-                        .collect(Collectors.toSet());
+            case "crift" -> {
+                if (!(sender instanceof Player player)) return;
 
-                if (args.length < 2) {
-                    sender.sendMessage("Usage: /trimsdebug new-objective <structure> [index]");
-                    return;
-                }
+                player.openWorkbench(null, true);
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        if (!(player.getOpenInventory().getTopInventory() instanceof CraftingInventory ci)) return;
 
-                NamespacedKey key = NamespacedKey.fromString(args[1]);
-                if (key == null) {
-                    sender.sendMessage("Unknown structure name: " + args[1]);
-                    return;
-                }
+                        ItemStack[] matrix = ci.getMatrix();
+                        matrix[0] = new ItemStack(Material.AMETHYST_SHARD);
+                        matrix[2] = new ItemStack(Material.AMETHYST_SHARD);
+                        matrix[6] = new ItemStack(Material.AMETHYST_SHARD);
+                        matrix[8] = new ItemStack(Material.AMETHYST_SHARD);
+                        matrix[1] = new ItemStack(Material.ENDER_PEARL);
+                        matrix[3] = new ItemStack(Material.ENDER_PEARL);
+                        matrix[5] = new ItemStack(Material.ENDER_PEARL);
+                        matrix[7] = new ItemStack(Material.LODESTONE);
 
-                Structure name = RegistryAccess.registryAccess().getRegistry(RegistryKey.STRUCTURE).get(key);
-                if (name == null) {
-                    sender.sendMessage("Unknown structure name: " + args[1]);
-                    return;
-                }
-
-                BorderLandWorld land = new BorderLandWorld(
-                        p.getWorld().getUID(),
-                        onlinePlayerIds,
-                        name
-                );
-
-                int index = 0;
-                if (args.length >= 3) {
-                    try {
-                        index = Integer.parseInt(args[2]);
-                    } catch (NumberFormatException ex) {
-                        sender.sendMessage("Invalid index. Use 0 or 1.");
-                        return;
+                        ci.setMatrix(matrix);
+                        player.updateInventory();
                     }
-                }
-                land.createWayPoint(obj, index);
+                    
+                }.runTaskLater(Main.getInstance(), 1);
+            }
+
+            case "crelay" -> {
+                if (!(sender instanceof Player player)) return;
+
+                player.openWorkbench(null, true);
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        if (!(player.getOpenInventory().getTopInventory() instanceof CraftingInventory ci)) return;
+
+                        ItemStack[] matrix = ci.getMatrix();
+                        matrix[0] = new ItemStack(Material.ENCHANTED_GOLDEN_APPLE);
+                        matrix[1] = new ItemStack(Material.ENDER_EYE);
+
+                        ci.setMatrix(matrix);
+                        player.updateInventory();
+                    }
+
+                }.runTaskLater(Main.getInstance(), 1);
             }
 
             case "armor-profile" -> {
@@ -360,7 +342,10 @@ public class DebugCommands implements BasicCommand {
                     "explode",
                     "heal",
                     "rc",
-                    "set"
+                    "set",
+                    "crelay",
+                    "crift",
+                    "tp"
             ).stream()
              .map(s -> s.toLowerCase(Locale.ROOT))
              .filter(s -> s.startsWith(q))

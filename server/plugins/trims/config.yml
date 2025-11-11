@@ -20,6 +20,9 @@ trims:
       meltdown: 600
     
     generation:
+      max-generated-worlds: 15
+      start-intial-generation-ticks: 6000
+      start-after-empty-ticks: 6000
       cpt: 1
       buffer-chunks: 1
   

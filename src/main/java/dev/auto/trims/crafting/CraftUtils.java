@@ -1,9 +1,8 @@
 package dev.auto.trims.crafting;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Keyed;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
+import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.generator.structure.Structure;
@@ -13,8 +12,11 @@ import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.stream.Collectors;
 
 public class CraftUtils {
     public static void removeCraftingRecipes() {
@@ -58,12 +60,26 @@ public class CraftUtils {
     }
 
     public static String getPrettyStructureName(Structure structure) {
-        String raw = structure.getStructureType().key().asString().toLowerCase().replace("minecraft:", "");
-        String[] split = raw.split("_");
-        StringBuilder sb = new StringBuilder();
-        for (String s : split) {
-            sb.append(s.substring(0, 1).toUpperCase()).append(s.substring(1).toLowerCase()).append(" ");
+        RegistryAccess access = RegistryAccess.registryAccess();
+        Registry<@NotNull Structure> registry = access.getRegistry(RegistryKey.STRUCTURE);
+
+        NamespacedKey key = registry.getKey(structure);
+        if (key == null) {
+            var typeKey = access.getRegistry(RegistryKey.STRUCTURE_TYPE)
+                                .getKey(structure.getStructureType());
+            if (typeKey == null) {
+                return "Unknown Structure";
+            }
+            return toPrettyName(typeKey.getKey());
         }
-        return sb.toString().trim();
+
+        return toPrettyName(key.getKey());
+    }
+
+    private static String toPrettyName(String id) {
+        return Arrays.stream(id.split("_"))
+                .filter(s -> !s.isEmpty())
+                .map(s -> Character.toUpperCase(s.charAt(0)) + s.substring(1))
+                .collect(Collectors.joining(" "));
     }
 }
