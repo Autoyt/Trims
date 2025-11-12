@@ -5,6 +5,7 @@ import dev.auto.trims.particles.utils.ColorUtils;
 import dev.auto.trims.world.BorderLandWorld;
 import lombok.Setter;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.type.Light;
@@ -167,7 +168,12 @@ public class InputRift {
                     .map(Player::getUniqueId)
                     .collect(Collectors.toSet());
 
-            bd = new BorderLandWorld(uuids, structure);
+            try {
+                bd = new BorderLandWorld(uuids, structure);
+            }
+            catch (IllegalStateException e) {
+                placer.sendMessage(MiniMessage.miniMessage().deserialize("<red>Error Encountered: " + e.getMessage()));
+            }
             bd.setLeader(placer);
 
             for (Player p : nearbyPlayers) {

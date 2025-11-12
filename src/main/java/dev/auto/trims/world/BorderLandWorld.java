@@ -202,7 +202,9 @@ public class BorderLandWorld {
             countdownTask = null;
         }
 
-        outputRift.stop();
+        if (outputRift != null) {
+            outputRift.stop();
+        }
 
         for (UUID sid : new HashSet<>(statuses.keySet())) {
             StatusBar bar = statuses.remove(sid);
@@ -248,8 +250,10 @@ public class BorderLandWorld {
         // Delete world folder and objectives file
         try {
             Path worldFolder = Bukkit.getWorldContainer().toPath().resolve(worldID.toString());
-            FileUtils.deleteFolder(worldFolder);
-        } catch (Exception ignored) {
+            Main.getInstance().getLogger().info("Attempting to delete world folder: " + worldFolder);
+            FileUtils.deleteFolderWithRetries(worldFolder, 5, 20);
+        } catch (Exception e) {
+            Main.getInstance().getLogger().warning("Exception while scheduling world folder deletion: " + e.getMessage());
         }
         FileUtils.deleteObjectivesFile(worldID);
 
@@ -424,11 +428,23 @@ public class BorderLandWorld {
 
             @Override
             public void run() {
-                if (leader == null || !leader.isOnline() || leader.getWorld() != world) return;
+                // If we don't have a valid leader context, reset multiplier and clear stale edgers
+                if (leader == null || !leader.isOnline() || leader.getWorld() != world) {
+                    edgerMultiplier = 1;
+                    // Remove any edgers that are no longer valid participants
+                    edgers.removeIf(id -> !players.contains(id));
+                    return;
+                }
 
                 Location location = leader.getLocation();
                 Collection<Player> nearbyPlayers = location.getWorld()
                         .getNearbyPlayers(location, followDistance, worldHeight, followDistance);
+
+                // Clean up edgers set from players who left the world or are offline
+                edgers.removeIf(id -> {
+                    Player p = Bukkit.getPlayer(id);
+                    return p == null || p.getWorld() != world || !players.contains(id);
+                });
 
                 for (UUID id : players) {
                     Player player = Bukkit.getPlayer(id);
@@ -517,9 +533,11 @@ public class BorderLandWorld {
     }
 
     public void removePlayer(Player player) {
-        players.remove(player.getUniqueId());
+        UUID pid = player.getUniqueId();
+        players.remove(pid);
+        edgers.remove(pid); // ensure they no longer contribute to penalty
         WaypointUtils.removeWaypoint(player);
-        StatusBar bar = statuses.remove(player.getUniqueId());
+        StatusBar bar = statuses.remove(pid);
         if (bar != null) bar.hide();
 
         if (!player.isDead()) {
@@ -528,6 +546,11 @@ public class BorderLandWorld {
                 spawn = Objects.requireNonNull(Bukkit.getWorld("world")).getSpawnLocation();
             }
             player.teleport(spawn);
+        }
+
+        // Recalculate multiplier quickly when player count shrinks
+        if (players.size() <= 1 || edgers.isEmpty()) {
+            edgerMultiplier = 1;
         }
 
         if (players.isEmpty()) {

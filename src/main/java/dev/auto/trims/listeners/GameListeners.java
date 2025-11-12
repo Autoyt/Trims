@@ -4,7 +4,9 @@ import dev.auto.trims.Main;
 import dev.auto.trims.effectHandlers.helpers.IBaseEffectHandler;
 import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.effectHandlers.heavyEvents.MovementListener;
+import dev.auto.trims.world.WorldManager;
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -12,6 +14,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class GameListeners implements Listener {
@@ -39,6 +42,11 @@ public class GameListeners implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         final Player player = event.getPlayer();
         final UUID uuid = player.getUniqueId();
+
+        if (WorldManager.getBorderWorld(player.getWorld()) == null) {
+            player.teleport(Objects.requireNonNull(Bukkit.getWorld("world")).getSpawnLocation());
+            player.sendMessage("Sending you to spawn. Invalid world");
+        }
 
         // The repeating tick task is started from Main.onEnable(). Just build the player's slots.
         TrimManager.buildSlots(uuid);
