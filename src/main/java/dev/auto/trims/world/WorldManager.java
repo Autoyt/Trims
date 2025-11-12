@@ -16,6 +16,8 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Interaction;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
@@ -31,6 +33,7 @@ import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.generator.structure.GeneratedStructure;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -335,6 +338,17 @@ public class WorldManager implements Listener {
     }
 
     @EventHandler
+    public void onExitClick(PlayerInteractEntityEvent event) {
+        if (!(event.getRightClicked() instanceof Interaction interaction)) return;
+        if (!globalPlayers.contains(event.getPlayer().getUniqueId())) return;
+
+        Player player = event.getPlayer();
+        World world = player.getWorld();
+        var bd = getBorderWorld(world);
+        bd.removePlayer(player);
+    }
+
+    @EventHandler
     public void onInventoryOpen(InventoryOpenEvent event) {
         if (!worlds.containsKey(event.getPlayer().getWorld())) return;
 
@@ -367,6 +381,11 @@ public class WorldManager implements Listener {
     }
 
     private void handleRiftToken(PlayerInteractEvent event) {
+        // Only handle right-clicks with the main hand
+        Action action = event.getAction();
+        if (action != Action.RIGHT_CLICK_AIR && action != Action.RIGHT_CLICK_BLOCK) return;
+        if (event.getHand() != EquipmentSlot.HAND) return;
+
         ItemStack item = event.getItem();
         if (item == null || item.getType() != Material.ENDER_EYE) return;
 
@@ -384,10 +403,10 @@ public class WorldManager implements Listener {
 
         long cooldownMs = riftCooldown * 50L;
 
-        Long storedCooldown = playerPdc.get(RiftCraftListener.riftKey, PersistentDataType.LONG);
+        Long storedCooldown = playerPdc.get(RiftCraftListener.riftPlayerCooldownKey, PersistentDataType.LONG);
         if (storedCooldown != null) {
-            long now = System.currentTimeMillis();
-            long elapsedMs = now - storedCooldown;
+            long nowMs = System.currentTimeMillis();
+            long elapsedMs = nowMs - storedCooldown;
             long remainingMs = cooldownMs - elapsedMs;
 
             if (remainingMs > 0) {
@@ -416,9 +435,16 @@ public class WorldManager implements Listener {
         }
 
         long now = System.currentTimeMillis();
-        playerPdc.set(RiftCraftListener.riftKey, PersistentDataType.LONG, now);
+        playerPdc.set(RiftCraftListener.riftPlayerCooldownKey, PersistentDataType.LONG, now);
 
-        item.setAmount(0);
+        // Consume exactly one item from the main hand
+        ItemStack main = player.getInventory().getItemInMainHand();
+        if (main != null && main.isSimilar(item)) {
+            int amount = main.getAmount();
+            if (amount > 0) {
+                main.setAmount(amount - 1);
+            }
+        }
 
         Structure structure = getStructureFromId(id);
         if (structure == null) return;
@@ -431,7 +457,8 @@ public class WorldManager implements Listener {
         BlockFace face = event.getBlockFace();
         Block intendedBlock = base.getRelative(face);
 
-        new InputRift(intendedBlock.getLocation(), structure);
+        var rift = new InputRift(intendedBlock.getLocation(), structure);
+        rift.setPlacer(player);
     }
 
     @EventHandler
@@ -499,6 +526,4 @@ public class WorldManager implements Listener {
             }
         }.runTaskLater(Main.getInstance(), 30);
     }
-
-
 }

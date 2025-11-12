@@ -6,6 +6,7 @@ import dev.auto.trims.effectHandlers.PlayerArmorSlots;
 import dev.auto.trims.managers.TrimManager;
 import dev.auto.trims.particles.GhostStepFX;
 import dev.auto.trims.particles.InputRift;
+import dev.auto.trims.particles.OutputRift;
 import dev.auto.trims.world.BorderLandWorld;
 import dev.auto.trims.world.WorldManager;
 import dev.auto.trims.world.WorldObjective;
@@ -232,7 +233,7 @@ public class DebugCommands implements BasicCommand {
 
             case "tp" -> {
                 if (!(sender instanceof Player p)) return;
-                new InputRift(p.getLocation(), Structure.MANSION);
+                new OutputRift(p.getLocation());
             }
 
             case "crift" -> {

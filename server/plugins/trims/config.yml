@@ -1,22 +1,45 @@
 trims:
+  # Ticks (20 ticks = 1 second). Example: 6000 ticks = 5 minutes
+  world-options:
+    s-o:
+      min: 5
+      max: 10
+    
+    o-e:
+      min: 5
+      max: 10
+    
+    duration:
+      meltdown: 27000
+    
+    generation:
+      cpt: 1
+      buffer-chunks: 1
+      start-intial-generation-ticks: 200
+      start-after-empty-ticks: 60
+      max-generated-worlds: 2
+  
   structure-options:
     '0':
+      follow-penalty-multiplier: 0.5
       name: Desert Temple
-      min: 10
-      max: 20
+      min: 150
+      max: 200
       follow-distance: 60
       world-border: true
       wd-buffer: 10
       time-to-meltdown: 27000
     '1':
+      follow-penalty-multiplier: 0.5
       name: Jungle Temple
       min: 10
       max: 20
       follow-distance: 60
       world-border: true
       wd-buffer: 10
-      time-to-meltdown: 27000
+      time-to-meltdown: 500
     '2':
+      follow-penalty-multiplier: 0.5
       name: Ancient City
       min: 10
       max: 20
@@ -25,6 +48,7 @@ trims:
       wd-buffer: 10
       time-to-meltdown: 27000
     '3':
+      follow-penalty-multiplier: 0.5
       name: Trial Chamber
       min: 10
       max: 20
@@ -33,6 +57,7 @@ trims:
       wd-buffer: 10
       time-to-meltdown: 27000
     '4':
+      follow-penalty-multiplier: 0.5
       name: Trail Ruins
       min: 10
       max: 20
@@ -41,6 +66,7 @@ trims:
       wd-buffer: 10
       time-to-meltdown: 27000
     '5':
+      follow-penalty-multiplier: 0.5
       name: Stronghold
       min: 10
       max: 20
@@ -49,6 +75,7 @@ trims:
       wd-buffer: 10
       time-to-meltdown: 27000
     '6':
+      follow-penalty-multiplier: 0.5
       name: Mansion
       min: 10
       max: 20
@@ -57,6 +84,7 @@ trims:
       wd-buffer: 10
       time-to-meltdown: 27000
     '7':
+      follow-penalty-multiplier: 0.5
       name: Monument
       min: 10
       max: 20
@@ -65,6 +93,7 @@ trims:
       wd-buffer: 10
       time-to-meltdown: 27000
     '8':
+      follow-penalty-multiplier: 0.5
       name: Pillager Outpost
       min: 10
       max: 20
@@ -73,6 +102,7 @@ trims:
       wd-buffer: 10
       time-to-meltdown: 27000
     '9':
+      follow-penalty-multiplier: 0.5
       name: Shipwreck
       min: 10
       max: 20
@@ -80,33 +110,11 @@ trims:
       world-border: true
       wd-buffer: 10
       time-to-meltdown: 27000
+  
   player-options:
-    spawn-variation: 10
     # Ticks | 24hrs currently
-    rift-cooldown: 60
-  world-options:
-    s-o:
-      min: 5
-      max: 15
-    
-    o-e:
-      min: 5
-      max: 15
-    
-    spawn-variation:
-      min: 5
-      max: 10
-    
-    duration:
-      # Ticks (20 ticks = 1 second). Example: 6000 ticks = 5 minutes
-      meltdown: 600
-    
-    generation:
-      max-generated-worlds: 15
-      start-intial-generation-ticks: 6000
-      start-after-empty-ticks: 6000
-      cpt: 1
-      buffer-chunks: 1
+    rift-cooldown: 400
+    spawn-variation: 10
   
   teleport-handler:
     # In seconds

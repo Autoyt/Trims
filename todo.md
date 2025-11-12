@@ -1,3 +1,6 @@
 - per structure distance settings
 - add placeholder api support
 - Ritual not being able to look fix
+- fix data folders not being removed
+- Sneak to heal vex
+- fix the getting put back in non normal world on restart.

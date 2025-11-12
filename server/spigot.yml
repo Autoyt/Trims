@@ -168,7 +168,7 @@ stats:
   disable-saving: false
   forced-stats: {}
 commands:
-  log: true
+  log: false
   spam-exclusions:
   - /skill
   tab-complete: 0

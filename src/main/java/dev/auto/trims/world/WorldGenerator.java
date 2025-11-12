@@ -259,8 +259,8 @@ public class WorldGenerator {
             throw new IllegalStateException("Missing structure-options config for id " + id);
         }
 
-        double radiusMin = worldOptions.getDouble("min");
-        double radiusMax = worldOptions.getDouble("max");
+        Double radiusMin = worldOptions.getDouble("min");
+        Double radiusMax = worldOptions.getDouble("max");
 
         if (radiusMax <= radiusMin) {
             radiusMax = radiusMin + 1.0;

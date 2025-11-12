@@ -4,6 +4,7 @@ import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import dev.auto.trims.Main;
 import dev.auto.trims.customEvents.BorderLandsOnLoadEvent;
 import dev.auto.trims.effectHandlers.helpers.StatusBar;
+import dev.auto.trims.particles.OutputRift;
 import dev.auto.trims.particles.utils.WarpInEntity;
 import dev.auto.trims.utils.FileUtils;
 import dev.auto.trims.utils.LocationUtils;
@@ -11,7 +12,9 @@ import dev.auto.trims.utils.WaypointUtils;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.bossbar.BossBar;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -42,16 +45,24 @@ public class BorderLandWorld {
     public final Set<UUID> players;
     public final Set<UUID> frozenPlayers = new HashSet<>();
     public final Map<UUID, StatusBar> statuses = new HashMap<>();
+    public final Set<UUID> edgers = new HashSet<>();
     @Setter
     private Player leader;
     private ArmorStand waypoint;
     private final UUID worldID;
     private World world;
+
     private final Structure structure;
+
     private BukkitTask waypointTask;
     private BukkitTask countdownTask;
+    private BukkitTask localBorderTask;
+
     private final int ticksUntilMeltdown;
+    private double edgerMultiplier = 1;
     private final ConfigurationSection config;
+
+    private OutputRift outputRift;
 
     @Setter
     private int elapsedTicks = 0;
@@ -134,9 +145,8 @@ public class BorderLandWorld {
             worldObjectives.put(struc, objective);
             if (struc != structure) continue;
 
-            createWayPoint(objective, 1);
+            outputRift = new OutputRift(objective.exit());
         }
-
 
         // Later
         for (UUID id : players) {
@@ -153,11 +163,18 @@ public class BorderLandWorld {
                     statusBar.setTitle("Meltdown in progress");
                     return;
                 }
-                statusBar.setColor(BossBar.Color.GREEN);
-                int remainingTicks = Math.max(0, ticksUntilMeltdown - elapsedTicks);
-                int minutes = (int) Math.ceil(remainingTicks / 1200.0);
 
-                statusBar.setTitle("%min% min to meltdown".replace("%min%", String.valueOf(minutes)));
+                statusBar.setColor(BossBar.Color.GREEN);
+
+                double remainingTicks = Math.max(0, ticksUntilMeltdown - elapsedTicks);
+                double adjustedTicks = remainingTicks / edgerMultiplier;
+
+                int totalSeconds = (int) Math.ceil(adjustedTicks / 20.0);
+                int minutes = totalSeconds / 60;
+                int seconds = totalSeconds % 60;
+
+                String formatted = String.format("%d:%02d", minutes, seconds);
+                statusBar.setTitle("%time% to meltdown".replace("%time%", formatted));
             });
 
             bar.setShouldHide(false);
@@ -170,6 +187,7 @@ public class BorderLandWorld {
         // Waypoint task
         waypointTask = createWaypointTask();
         countdownTask = createCountdownTask();
+        localBorderTask = createLocalBorderTask();
 
         Bukkit.getPluginManager().callEvent(new BorderLandsOnLoadEvent(worldID));
     }
@@ -183,6 +201,8 @@ public class BorderLandWorld {
             countdownTask.cancel();
             countdownTask = null;
         }
+
+        outputRift.stop();
 
         for (UUID sid : new HashSet<>(statuses.keySet())) {
             StatusBar bar = statuses.remove(sid);
@@ -325,7 +345,9 @@ public class BorderLandWorld {
                 if (players.isEmpty()) return;
 
                 final int before = elapsedTicks;
-                elapsedTicks += 5;
+                final int increment = (int) (5 * edgerMultiplier);
+                elapsedTicks += increment;
+
                 if (elapsedTicks > ticksUntilMeltdown) elapsedTicks = ticksUntilMeltdown;
 
                 for (UUID id : players) {
@@ -394,6 +416,51 @@ public class BorderLandWorld {
         }.runTaskLater(Main.getInstance(), 20);
     }
 
+    private BukkitTask createLocalBorderTask() {
+        return new BukkitRunnable() {
+            final double followDistance = config.getDouble("follow-distance");
+            final double penaltyMultiplier = config.getDouble("follow-penalty-multiplier");
+            final double worldHeight = world.getMaxHeight();
+
+            @Override
+            public void run() {
+                if (leader == null || !leader.isOnline() || leader.getWorld() != world) return;
+
+                Location location = leader.getLocation();
+                Collection<Player> nearbyPlayers = location.getWorld()
+                        .getNearbyPlayers(location, followDistance, worldHeight, followDistance);
+
+                for (UUID id : players) {
+                    Player player = Bukkit.getPlayer(id);
+                    if (player == null || player == leader || player.getWorld() != world) continue;
+
+                    boolean isOut = !nearbyPlayers.contains(player);
+
+                    if (isOut && !edgers.contains(id)) {
+                        edgers.add(id);
+                        player.sendMessage(MiniMessage.miniMessage()
+                                .deserialize("<gray>Don't stay out too long, the world is unstable"));
+                        player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+                    }
+                    else if (!isOut && edgers.contains(id)) {
+                        edgers.remove(id);
+                    }
+                }
+
+                int totalPlayers = players.size();
+                if (totalPlayers <= 1) {
+                    edgerMultiplier = 1;
+                    return;
+                }
+
+                double ratio = (double) edgers.size() / totalPlayers;
+                edgerMultiplier = Math.min(1 + (ratio * totalPlayers * penaltyMultiplier), 5);
+            }
+
+        }.runTaskTimer(Main.getInstance(), 0, 10);
+    }
+
+
     public void addPlayer(Player player) {
         if (worldObjectives.isEmpty()) throw new IllegalStateException("World Objectives are empty");
         if (!players.contains(player.getUniqueId())) throw new IllegalStateException("Player is not in world");
@@ -408,7 +475,7 @@ public class BorderLandWorld {
         Location spawn = objective.spawn().clone().add(0, 70, 0);
         Location dropPoint = LocationUtils.randomInCircle(spawn, spawnVariation);
 
-        PotionEffect sf = new PotionEffect(PotionEffectType.SLOW_FALLING, Integer.MAX_VALUE, 1, false, false);
+        PotionEffect sf = new PotionEffect(PotionEffectType.SLOW_FALLING, 200 * 20, 1, false, false);
         player.addPotionEffect(sf);
 
         new BukkitRunnable() {
@@ -441,6 +508,12 @@ public class BorderLandWorld {
         }.runTaskLater(Main.getInstance(), 20 * 10);
 
         player.teleport(dropPoint);
+
+        if (player.isOp()) {
+            player.sendMessage(MiniMessage.miniMessage().deserialize("<green><click:run_command:" + LocationUtils.locationToCommand(objective.spawn(), player) + ">Click</click> to teleport to spawn"));
+            player.sendMessage(MiniMessage.miniMessage().deserialize("<red><click:run_command:" + LocationUtils.locationToCommand(objective.objective(), player) + ">Click</click> to teleport to objective"));
+            player.sendMessage(MiniMessage.miniMessage().deserialize("<light_purple><click:run_command:" + LocationUtils.locationToCommand(objective.exit(), player) + ">Click</click> to teleport to exit"));
+        }
     }
 
     public void removePlayer(Player player) {
@@ -469,33 +542,6 @@ public class BorderLandWorld {
                 }
             }.runTaskLater(Main.getInstance(), 20 * 5);
         }
-    }
-
-    public void createWayPoint(WorldObjective objective, Integer index) {
-        if (index > 1 || index < 0) throw new IllegalArgumentException("Index must be between 0 and 1");
-
-        Location loc = switch (index) {
-            case 0 -> objective.objective();
-            case 1 -> objective.exit();
-            default -> throw new IllegalArgumentException("Index must be between 0 and 1");
-        };
-
-        UUID id = UUID.randomUUID();
-        ArmorStand stand = loc.getWorld().spawn(loc, ArmorStand.class);
-        stand.setInvisible(true);
-        stand.setInvulnerable(true);
-        stand.setMarker(true);
-        stand.setCanMove(false);
-        stand.addScoreboardTag(id.toString());
-        AttributeInstance waypointRange = stand.getAttribute(Attribute.WAYPOINT_TRANSMIT_RANGE);
-        if (waypointRange != null) waypointRange.setBaseValue(600000);
-
-        Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
-            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "waypoint modify @e[type=armor_stand,tag=%id%,limit=1] color hex 43E866".replace("%id%", id.toString()));
-        }, 5);
-
-        if (waypoint != null) waypoint.remove();
-        waypoint = stand;
     }
 
     public static UUID createWorld() {

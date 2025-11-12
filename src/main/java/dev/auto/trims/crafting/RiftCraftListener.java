@@ -22,6 +22,7 @@ import java.util.Map;
 
 public class RiftCraftListener implements Listener {
     public static final NamespacedKey riftKey = new NamespacedKey("trims", "rift_dupe");
+    public static final NamespacedKey riftPlayerCooldownKey = new NamespacedKey("trims", "rift_player_cooldown");
     public RiftCraftListener() {
 
         Material[] mats = structures.keySet().toArray(new Material[0]);

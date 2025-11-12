@@ -3,6 +3,7 @@ package dev.auto.trims.particles;
 import dev.auto.trims.Main;
 import dev.auto.trims.particles.utils.ColorUtils;
 import dev.auto.trims.world.BorderLandWorld;
+import lombok.Setter;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -31,6 +32,8 @@ public class InputRift {
     private final Location origin;
     private BorderLandWorld bd;
     private final Structure structure;
+    @Setter
+    Player placer;
 
     private BukkitTask fingerTask;
     private BukkitTask ambientTask;
@@ -165,6 +168,7 @@ public class InputRift {
                     .collect(Collectors.toSet());
 
             bd = new BorderLandWorld(uuids, structure);
+            bd.setLeader(placer);
 
             for (Player p : nearbyPlayers) {
                 p.setGlowing(false);
