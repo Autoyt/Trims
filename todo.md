@@ -1,4 +1,4 @@
 - add placeholder api support
 - Sneak to heal vex
 - Change rift token to random choice.
-- Fix waypoints not showing initially
+- Update to use SQL lite database

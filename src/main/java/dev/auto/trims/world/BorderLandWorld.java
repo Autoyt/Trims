@@ -154,7 +154,7 @@ public class BorderLandWorld {
             if (player == null) continue;
 
             AttributeInstance waypointRange = player.getAttribute(Attribute.WAYPOINT_RECEIVE_RANGE);
-            if (waypointRange != null) waypointRange.setBaseValue(600000);
+            if (waypointRange != null) waypointRange.setBaseValue(Integer.MAX_VALUE);
 
             StatusBar bar = new StatusBar(id);
             bar.setConsumer((uuid, statusBar) -> {
@@ -164,7 +164,12 @@ public class BorderLandWorld {
                     return;
                 }
 
-                statusBar.setColor(BossBar.Color.GREEN);
+                if (elapsedTicks >= ticksUntilMeltdown - 20 * 60 * 5) {
+                    statusBar.setColor(BossBar.Color.RED);
+                }
+                else {
+                    statusBar.setColor(BossBar.Color.GREEN);
+                }
 
                 double remainingTicks = Math.max(0, ticksUntilMeltdown - elapsedTicks);
                 double adjustedTicks = remainingTicks / edgerMultiplier;

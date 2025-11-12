@@ -28,7 +28,7 @@ trims:
       follow-distance: 60
       world-border: true
       wd-buffer: 10
-      time-to-meltdown: 27000
+      time-to-meltdown: 6000
     '1':
       follow-penalty-multiplier: 0.5
       name: Jungle Temple

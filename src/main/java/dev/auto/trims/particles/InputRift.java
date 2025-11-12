@@ -170,11 +170,12 @@ public class InputRift {
 
             try {
                 bd = new BorderLandWorld(uuids, structure);
+                bd.setLeader(placer);
             }
             catch (IllegalStateException e) {
                 placer.sendMessage(MiniMessage.miniMessage().deserialize("<red>Error Encountered: " + e.getMessage()));
+                this.stop();
             }
-            bd.setLeader(placer);
 
             for (Player p : nearbyPlayers) {
                 p.setGlowing(false);

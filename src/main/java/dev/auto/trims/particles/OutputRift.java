@@ -2,7 +2,6 @@ package dev.auto.trims.particles;
 
 import dev.auto.trims.Main;
 import dev.auto.trims.particles.utils.ColorUtils;
-import dev.auto.trims.world.WorldManager;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -25,7 +24,14 @@ public class OutputRift {
     private final Location origin;
     private BukkitTask ambientTask;
     private BukkitTask spinTask;
-    private BukkitTask wayPointTask;
+    private BukkitTask waypointColorTask;
+    private BukkitTask wayPointDistanceTask;
+
+    private Chunk loadedChunk;
+
+    private ArmorStand waypointStand;
+    private UUID waypointId;
+
     public static NamespacedKey outputRiftKey = new NamespacedKey(Main.getInstance(), "output_rift");
     private static final UUID riftId = UUID.randomUUID();
 
@@ -168,28 +174,54 @@ public class OutputRift {
     }
 
     private void setupWaypoint() {
-        UUID id = UUID.randomUUID();
-        ArmorStand stand = origin.getWorld().spawn(origin, ArmorStand.class);
-        stand.setPersistent(true);
-        stand.setInvisible(true);
-        stand.setInvulnerable(true);
-        stand.setMarker(true);
-        stand.setCanMove(false);
-        stand.addScoreboardTag(id.toString());
-        AttributeInstance waypointRange = stand.getAttribute(Attribute.WAYPOINT_TRANSMIT_RANGE);
-        if (waypointRange != null) waypointRange.setBaseValue(600000);
+        addChunkTicket();
+        waypointId = UUID.randomUUID();
+        waypointStand = origin.getWorld().spawn(origin, ArmorStand.class, stand -> {
+            stand.setPersistent(true);
+            stand.setRemoveWhenFarAway(false);
+            stand.setInvisible(true);
+            stand.setInvulnerable(true);
+            stand.setMarker(true);
+            stand.setCanMove(false);
+            stand.setGravity(false);
+            stand.addScoreboardTag(waypointId.toString());
+            AttributeInstance range = stand.getAttribute(Attribute.WAYPOINT_TRANSMIT_RANGE);
+            if (range != null) range.setBaseValue(Integer.MAX_VALUE);
+        });
 
-        wayPointTask = new BukkitRunnable() {
+        waypointColorTask = new BukkitRunnable() {
+            @Override public void run() {
+                if (!isWaypointActive()) return;
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
+                    "waypoint modify @e[type=armor_stand,tag=" + waypointId + ",limit=1] color hex e612e6");
+            }
+        }.runTaskTimer(Main.getInstance(), 40, 200);
+
+        wayPointDistanceTask = new BukkitRunnable() {
             @Override
             public void run() {
-                boolean commandStatus = Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), "waypoint modify @e[type=armor_stand,tag=%id%,limit=1] color hex e612e6".replace("%id%", id.toString()));
-                if (!commandStatus) {
-                    Main.getInstance().getLogger().warning("Failed to set waypoint color for output rift.");
-                    this.cancel();
-                }
+                AttributeInstance waypointRange = waypointStand.getAttribute(Attribute.WAYPOINT_TRANSMIT_RANGE);
+                if (waypointRange != null) waypointRange.setBaseValue(Integer.MAX_VALUE);
             }
 
-        }.runTaskTimer(Main.getInstance(), 1, 20);
+        }.runTaskTimer(Main.getInstance(), 0, 40);
+    }
+
+    private boolean isWaypointActive() {
+        return waypointStand != null && waypointStand.isValid()
+               && waypointStand.getLocation().getChunk().isLoaded();
+    }
+
+    private void addChunkTicket() {
+        loadedChunk = origin.getChunk();
+        loadedChunk.addPluginChunkTicket(Main.getInstance());
+    }
+
+    private void removeChunkTicket() {
+        if (loadedChunk != null) {
+            loadedChunk.removePluginChunkTicket(Main.getInstance());
+            loadedChunk = null;
+        }
     }
 
     public void stop() {
@@ -203,7 +235,11 @@ public class OutputRift {
             display.remove();
         }
 
-        wayPointTask.cancel();
+        waypointColorTask.cancel();
+        wayPointDistanceTask.cancel();
+        waypointStand.remove();
+
+        removeChunkTicket();
 
         origin.getBlock().setType(Material.AIR);
         selectedTeam.unregister();
