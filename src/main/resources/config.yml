@@ -29,6 +29,7 @@ trims:
       world-border: true
       wd-buffer: 10
       time-to-meltdown: 27000
+      chance: 10
     1:
       name: Jungle Temple
       min: 10
@@ -38,6 +39,7 @@ trims:
       world-border: true
       wd-buffer: 10
       time-to-meltdown: 27000
+      chance: 10
     2:
       name: Ancient City
       min: 10
@@ -47,6 +49,7 @@ trims:
       world-border: true
       wd-buffer: 10
       time-to-meltdown: 27000
+      chance: 10
     3:
       name: Trial Chamber
       min: 10
@@ -56,6 +59,7 @@ trims:
       world-border: true
       wd-buffer: 10
       time-to-meltdown: 27000
+      chance: 10
     4:
       name: Trail Ruins
       min: 10
@@ -65,6 +69,7 @@ trims:
       world-border: true
       wd-buffer: 10
       time-to-meltdown: 27000
+      chance: 10
     5:
       name: Stronghold
       min: 10
@@ -74,6 +79,7 @@ trims:
       world-border: true
       wd-buffer: 10
       time-to-meltdown: 27000
+      chance: 10
     6:
       name: Mansion
       min: 10
@@ -83,6 +89,7 @@ trims:
       world-border: true
       wd-buffer: 10
       time-to-meltdown: 27000
+      chance: 10
     7:
       name: Monument
       min: 10
@@ -92,6 +99,7 @@ trims:
       world-border: true
       wd-buffer: 10
       time-to-meltdown: 27000
+      chance: 10
     8:
       name: Pillager Outpost
       min: 10
@@ -101,6 +109,7 @@ trims:
       world-border: true
       wd-buffer: 10
       time-to-meltdown: 27000
+      chance: 10
     9:
       name: Shipwreck
       min: 10
@@ -110,11 +119,13 @@ trims:
       world-border: true
       wd-buffer: 10
       time-to-meltdown: 27000
+      chance: 10
 
   player-options:
     # Ticks | 24hrs currently
     rift-cooldown: 1728000
     spawn-variation: 10
+    per-material-structure-selection: true
 
   teleport-handler:
     # In seconds

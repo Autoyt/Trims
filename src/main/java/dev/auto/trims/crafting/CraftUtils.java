@@ -19,6 +19,9 @@ import java.util.Iterator;
 import java.util.stream.Collectors;
 
 public class CraftUtils {
+    /**
+     * Removes registered crafting recipes.
+     */
     public static void removeCraftingRecipes() {
         // Trims recipes
         Iterator<Recipe> trimRecipe = Bukkit.recipeIterator();
@@ -37,6 +40,13 @@ public class CraftUtils {
         }
     }
 
+    /**
+     * Gives a player a trimmed netherite set.
+     * @apiNote Debug status
+     * @param player
+     * @param pattern
+     * @param material
+     */
     public static void giveTrimmedNetheriteSet(Player player, TrimPattern pattern, TrimMaterial material) {
         if (player == null || pattern == null || material == null) return;
 
@@ -59,6 +69,10 @@ public class CraftUtils {
         return item;
     }
 
+    /**
+     * @param structure target structure to get pretty name for
+     * @return Pretty name of the structure, e.g. "Village" instead of "village_plains"
+     */
     public static String getPrettyStructureName(Structure structure) {
         RegistryAccess access = RegistryAccess.registryAccess();
         Registry<@NotNull Structure> registry = access.getRegistry(RegistryKey.STRUCTURE);

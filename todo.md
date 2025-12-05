@@ -2,3 +2,5 @@
 - Sneak to heal vex
 - Change rift token to random choice.
 - Update to use SQL lite database
+- Fix being able to open rift in outerworld
+- Remove health radius VEX
