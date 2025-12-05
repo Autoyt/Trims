@@ -175,11 +175,12 @@ public class InputRift {
             catch (IllegalStateException e) {
                 placer.sendMessage(MiniMessage.miniMessage().deserialize("<red>Error Encountered: " + e.getMessage()));
                 this.stop();
+                return;
             }
 
             for (Player p : nearbyPlayers) {
                 p.setGlowing(false);
-                selectedTeam.removeEntry(p.getName());
+                try { selectedTeam.removeEntity(p); } catch (IllegalStateException ignored) {}
 
                 p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
                 p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 1f);
@@ -277,16 +278,16 @@ public class InputRift {
 
         for (Player p : nearbyPlayers) {
             Location toLoc = p.getLocation().clone().add(0, 1, 0);
-            selectedTeam.addEntry(p.getName());
+            selectedTeam.addEntity(p);
             p.setGlowing(true);
             drawFinger(drawOrigin, toLoc);
         }
 
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (nearbyPlayers.contains(p)) continue;
-            if (selectedTeam.getEntries().contains(p.getName())) {
+            if (selectedTeam.hasEntity(p)) {
                 p.setGlowing(false);
-                selectedTeam.removeEntry(p.getName());
+                try { selectedTeam.removeEntity(p); } catch (IllegalStateException ignored) {}
             }
         }
     }
@@ -343,12 +344,19 @@ public class InputRift {
 
         origin.getBlock().setType(Material.AIR);
 
-        for (Player p : selectedTeam.getEntries().stream().map(Bukkit::getPlayer).toList()) {
-            if (p == null) continue;
-            p.setGlowing(false);
-            selectedTeam.removeEntry(p.getName());
+        // Clear glowing and team membership for players safely
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (selectedTeam.hasEntity(p)) {
+                p.setGlowing(false);
+                try { selectedTeam.removeEntity(p); } catch (IllegalStateException ignored) {}
+            }
+        }
+        // Remove display entity from team as well
+        if (display != null && display.isValid()) {
+            try { selectedTeam.removeEntity(display); } catch (IllegalStateException ignored) {}
         }
 
-        selectedTeam.unregister();
+        // Finally, unregister the team
+        try { selectedTeam.unregister(); } catch (IllegalStateException ignored) {}
     }
 }

@@ -205,6 +205,18 @@ public class DebugCommands implements BasicCommand {
                 effect.run(plugin, p);
             }
 
+//            case "shrink" -> {
+//                Player target = Bukkit.getPlayer(args[1]);
+//                float scale = args.length > 2 ? Float.parseFloat(args[2]) : 0.5f;
+//
+//                assert target != null;
+//                AttributeInstance attr = target.getAttribute(Attribute.SCALE);
+//                if (attr == null) return;
+//
+//                attr.setBaseValue(scale);
+//                sender.sendMessage("Scaled " + target.getName() + " down to " + scale);
+//            }
+
             case "new-world" -> {
                 if (!(sender instanceof Player p)) return;
 

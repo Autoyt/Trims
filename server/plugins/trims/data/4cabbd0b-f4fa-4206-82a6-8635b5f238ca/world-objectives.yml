@@ -1,0 +1,270 @@
+'2':
+  ==: WorldObjective
+  exit:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: 531.5
+    y: 127.0
+    z: -1005.5
+    pitch: 0.0
+    yaw: 0.0
+  spawn:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: 518.5
+    y: 123.0
+    z: -1026.5
+    pitch: 0.0
+    yaw: 0.0
+  type: 2
+  objective:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: 528.5
+    y: 134.0
+    z: -1023.5
+    pitch: 0.0
+    yaw: 0.0
+'7':
+  ==: WorldObjective
+  exit:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: -167.5
+    y: 63.0
+    z: 295.5
+    pitch: 0.0
+    yaw: 0.0
+  spawn:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: -163.5
+    y: 63.0
+    z: 289.5
+    pitch: 0.0
+    yaw: 0.0
+  type: 7
+  objective:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: -175.5
+    y: 63.0
+    z: 304.5
+    pitch: 0.0
+    yaw: 0.0
+'6':
+  ==: WorldObjective
+  exit:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: 4721.5
+    y: 71.0
+    z: 3109.5
+    pitch: 0.0
+    yaw: 0.0
+  spawn:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: 4726.5
+    y: 68.0
+    z: 3112.5
+    pitch: 0.0
+    yaw: 0.0
+  type: 6
+  objective:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: 4720.5
+    y: 83.0
+    z: 3120.5
+    pitch: 0.0
+    yaw: 0.0
+'0':
+  ==: WorldObjective
+  exit:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: -3124.5
+    y: 63.0
+    z: -3727.5
+    pitch: 0.0
+    yaw: 0.0
+  spawn:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: -3186.5
+    y: 67.0
+    z: -3867.5
+    pitch: 0.0
+    yaw: 0.0
+  type: 0
+  objective:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: -3231.5
+    y: 79.0
+    z: -3759.5
+    pitch: 0.0
+    yaw: 0.0
+'5':
+  ==: WorldObjective
+  exit:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: 1429.5
+    y: 63.0
+    z: -1903.5
+    pitch: 0.0
+    yaw: 0.0
+  spawn:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: 1441.5
+    y: 63.0
+    z: -1916.5
+    pitch: 0.0
+    yaw: 0.0
+  type: 5
+  objective:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: 1424.5
+    y: 63.0
+    z: -1919.5
+    pitch: 0.0
+    yaw: 0.0
+'4':
+  ==: WorldObjective
+  exit:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: -538.5
+    y: 63.0
+    z: -292.5
+    pitch: 0.0
+    yaw: 0.0
+  spawn:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: -557.5
+    y: 67.0
+    z: -316.5
+    pitch: 0.0
+    yaw: 0.0
+  type: 4
+  objective:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: -543.5
+    y: 63.0
+    z: -303.5
+    pitch: 0.0
+    yaw: 0.0
+'1':
+  ==: WorldObjective
+  exit:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: -2540.5
+    y: 66.0
+    z: -895.5
+    pitch: 0.0
+    yaw: 0.0
+  spawn:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: -2549.5
+    y: 73.0
+    z: -897.5
+    pitch: 0.0
+    yaw: 0.0
+  type: 1
+  objective:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: -2543.5
+    y: 66.0
+    z: -911.5
+    pitch: 0.0
+    yaw: 0.0
+'3':
+  ==: WorldObjective
+  exit:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: 11.5
+    y: 63.0
+    z: -242.5
+    pitch: 0.0
+    yaw: 0.0
+  spawn:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: 15.5
+    y: 63.0
+    z: -243.5
+    pitch: 0.0
+    yaw: 0.0
+  type: 3
+  objective:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: 16.5
+    y: 63.0
+    z: -223.5
+    pitch: 0.0
+    yaw: 0.0
+'8':
+  ==: WorldObjective
+  exit:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: -3276.5
+    y: 68.0
+    z: -3923.5
+    pitch: 0.0
+    yaw: 0.0
+  spawn:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: -3249.5
+    y: 76.0
+    z: -3941.5
+    pitch: 0.0
+    yaw: 0.0
+  type: 8
+  objective:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: -3263.5
+    y: 76.0
+    z: -3935.5
+    pitch: 0.0
+    yaw: 0.0
+'9':
+  ==: WorldObjective
+  exit:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: -378.5
+    y: 63.0
+    z: -571.5
+    pitch: 0.0
+    yaw: 0.0
+  spawn:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: -382.5
+    y: 63.0
+    z: -570.5
+    pitch: 0.0
+    yaw: 0.0
+  type: 9
+  objective:
+    ==: org.bukkit.Location
+    world: 4cabbd0b-f4fa-4206-82a6-8635b5f238ca
+    x: -367.5
+    y: 63.0
+    z: -559.5
+    pitch: 0.0
+    yaw: 0.0

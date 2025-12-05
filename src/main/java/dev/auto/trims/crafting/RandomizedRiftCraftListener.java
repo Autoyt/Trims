@@ -71,7 +71,7 @@ public class RandomizedRiftCraftListener implements Listener {
         if (event.isShiftClick()) {
             event.setCancelled(true);
             if (event.getWhoClicked() instanceof Player p) {
-                p.sendMessage("Shift-click crafting is disabled for Rift Tokens.");
+                p.sendMessage(" Shift-click crafting is disabled for Rift Tokens.");
             }
             return;
         }
