@@ -4,10 +4,7 @@ import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketListenerPriority;
 import dev.auto.trims.commands.DebugCommands;
 import dev.auto.trims.commands.DisplayEntityDebugCommand;
-import dev.auto.trims.crafting.CraftUtils;
-import dev.auto.trims.crafting.RelayAppleListener;
-import dev.auto.trims.crafting.RiftCraftListener;
-import dev.auto.trims.crafting.TrimCraftListener;
+import dev.auto.trims.crafting.*;
 import dev.auto.trims.effectHandlers.*;
 import dev.auto.trims.listeners.GameListeners;
 import dev.auto.trims.managers.TrimManager;
@@ -84,7 +81,15 @@ public final class Main extends JavaPlugin {
         TrimCraftListener craftListener = new TrimCraftListener(this);
         pl.registerEvents(craftListener, this);
 
-        pl.registerEvents(new RiftCraftListener(), this);
+        if (getConfig().getBoolean("trims.player-options.per-material-structure-selection")) {
+            pl.registerEvents(new RiftCraftListener(), this);
+            getLogger().info("Rift crafting listener registered | Per-material structure selection enabled");
+        }
+        else {
+            pl.registerEvents(new RandomizedRiftCraftListener(), this);
+            getLogger().info("Rift crafting listener registered | Randomized structure selection enabled");
+        }
+
         pl.registerEvents(new RelayAppleListener(), this);
 
         tickTask = TrimManager.start();

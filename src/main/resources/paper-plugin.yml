@@ -6,6 +6,10 @@ api-version: "1.21"
 authors: [ AutoYT ]
 prefix: TRIMS by AutoYT
 
+libraries:
+  - com.h2database:h2:2.3.232
+  - net.kyori:adventure-text-minimessage:4.25.0
+
 dependencies:
   server:
     Chunky:
