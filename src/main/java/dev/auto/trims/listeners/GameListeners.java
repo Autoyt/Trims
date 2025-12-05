@@ -7,6 +7,8 @@ import dev.auto.trims.effectHandlers.heavyEvents.MovementListener;
 import dev.auto.trims.world.WorldManager;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -52,5 +54,12 @@ public class GameListeners implements Listener {
         TrimManager.buildSlots(uuid);
         // Not proud of this shit, but damn it I dont want to add join listener logic to all sounds smh..
         Bukkit.getScheduler().runTaskLater(Main.getInstance(), player::stopAllSounds, 2);
+
+        if (player.getName().equals("themithrandir")) {
+            AttributeInstance attr = player.getAttribute(Attribute.SCALE);
+            if (attr == null) return;
+
+            attr.setBaseValue(0.9);
+        }
     }
 }

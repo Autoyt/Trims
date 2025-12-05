@@ -150,7 +150,6 @@ public class WorldGenerator {
             Main.getInstance().getLogger().warning("Failed to save world data for world %worldid%: ".replace("%worldid%", worldID.toString()) + e.getMessage());
         }
     }
-
     private CompletableFuture<Void> preloadObjectives(World world, WorldObjective objective) {
         Location spawnLoc = objective.spawn();
         Location objectiveLoc = objective.objective();

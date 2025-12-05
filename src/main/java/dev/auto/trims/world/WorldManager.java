@@ -398,6 +398,8 @@ public class WorldManager implements Listener {
 
         event.setCancelled(true);
 
+        if (worlds.containsKey(event.getPlayer().getWorld())) return;
+
         Player player = event.getPlayer();
         var playerPdc = player.getPersistentDataContainer();
 
