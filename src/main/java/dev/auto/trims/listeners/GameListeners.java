@@ -59,7 +59,7 @@ public class GameListeners implements Listener {
             AttributeInstance attr = player.getAttribute(Attribute.SCALE);
             if (attr == null) return;
 
-            attr.setBaseValue(0.9);
+            attr.setBaseValue(0.88);
         }
     }
 }

@@ -25,6 +25,7 @@ import java.util.UUID;
 public class LevitationHandler extends OptimizedHandler implements IBaseEffectHandler, Listener {
     private final Main instance;
     private static final TrimPattern defaultPattern = TrimPattern.DUNE;
+    private static final int cooldown = 5 * 20;
     private final Set<UUID> lv4Players = new HashSet<>();
     private final Set<UUID> sneakingPlayers = new HashSet<>();
     private final Set<UUID> onCooldown = new HashSet<>();
@@ -92,7 +93,7 @@ public class LevitationHandler extends OptimizedHandler implements IBaseEffectHa
         if (instanceCount > 0) {
             if (onCooldown.contains(id)) return;
             onCooldown.add(id);
-            instance.getServer().getScheduler().runTaskLater(instance, () -> onCooldown.remove(id), 80);
+            instance.getServer().getScheduler().runTaskLater(instance, () -> onCooldown.remove(id), cooldown);
 
             player.getWorld().spawnParticle(Particle.ASH, player.getLocation(), 10);
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
